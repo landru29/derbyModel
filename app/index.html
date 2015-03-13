@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="fr">
+    <head>
+        <meta charset="utf-8">
+        <title>Derby</title>
+        <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.3.min.js"></script>
+        <script type="text/javascript" src="scripts/track.js"></script>
+        <link rel="stylesheet" href="styles/track.css">
+        <script>
+            $(document).ready(function(){
+                var scene = new DerbySimulator.Scene({scale:0.3});
+                $('body').get(0).appendChild(scene.getElement());
+            });
+        </script>
+    </head>
+    <body>
+    </body>
+
+</html>

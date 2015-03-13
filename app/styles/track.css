@@ -1,0 +1,41 @@
+g.track  path.limit {
+    stroke:steelblue;
+    stroke-width: 25px;
+    fill:none;
+}
+
+g.track  path.jam-line {
+    stroke:steelblue;
+    stroke-width: 25px;
+    fill:none;
+}
+
+g.track  path.pivot-line {
+    stroke:steelblue;
+    stroke-width: 25px;
+    fill:none;
+}
+
+g.penalty-box .penalty-box {
+    stroke:orange;
+    stroke-width: 15px;
+    fill:none;
+}
+
+g.bench .bench {
+    stroke:#5F04B4;
+    stroke-width: 15px;
+    fill:none;
+}
+    
+g.track  path.three-meters {
+    stroke:darkgrey;
+    stroke-width: 5px;
+    fill:none;
+}
+
+g.player  circle {
+    stroke:#aaaaaa;
+    stroke-width: 10px;
+    fill:white;
+}
