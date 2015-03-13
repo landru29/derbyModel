@@ -662,14 +662,14 @@ var DerbySimulator = (function () {
                     //There is a collision !
                     if (player.slave === true) {
                         var vector = {
-                            deltaX: Math.abs(distance) * (player.x - this.x) / centerDistance,
-                            deltaY: Math.abs(distance) * (player.y - this.y) / centerDistance
+                            deltaX: Math.abs(distance * 1.2) * (player.x - this.x) / centerDistance,
+                            deltaY: Math.abs(distance * 1.2) * (player.y - this.y) / centerDistance
                         };
                         player.setPosition(vector, true);
                     } else {
                         var vector = {
-                            deltaX: Math.abs(distance) * (this.x - player.x) / centerDistance,
-                            deltaY: Math.abs(distance) * (this.y - player.y) / centerDistance
+                            deltaX: Math.abs(distance * 1.2) * (this.x - player.x) / centerDistance,
+                            deltaY: Math.abs(distance * 1.2) * (this.y - player.y) / centerDistance
                         };
                         this.setPosition(vector, true);
                     }
