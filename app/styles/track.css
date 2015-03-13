@@ -1,7 +1,7 @@
 g.track  path.limit {
     stroke:steelblue;
     stroke-width: 25px;
-    fill:none;
+    fill:#F7F8E0;
 }
 
 g.track  path.jam-line {
@@ -35,7 +35,7 @@ g.track  path.three-meters {
 }
 
 g.player  circle {
-    stroke:#aaaaaa;
+    stroke:#819FF7;
     stroke-width: 10px;
-    fill:white;
+    fill:#ffffff;
 }

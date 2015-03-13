@@ -14,6 +14,22 @@ var DerbySimulator = (function () {
     };
     
     /**
+     * Detect if a point is inside a polygone
+     *  Jonas Raoni Soares Silva
+     *  http://jsfromhell.com/math/is-point-in-poly [rev. #0]
+     * @param   {array}    poly list of (x,y) points
+     * @param   {Object}   pt   (x,y) point
+     * @returns {boolean} true | false
+     */
+    var isPointInPoly = function(poly, pt){
+        for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
+            ((poly[i].y <= pt.y && pt.y < poly[j].y) || (poly[j].y <= pt.y && pt.y < poly[i].y))
+            && (pt.x < (poly[j].x - poly[i].x) * (pt.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x)
+            && (c = !c);
+        return c;
+    };
+    
+    /**
      * Create a svg element
      * @param   {string}     tag         name of the svg element
      * @param   {object}     attrs       list of attributes
@@ -31,6 +47,11 @@ var DerbySimulator = (function () {
         return elt;
     };
     
+    /**
+     * add a style element to a dom element
+     * @param {domElement} dom   Dom element to modify
+     * @param {object}     style css object
+     */
     var addStyle = function(dom, style) {
         var strStyle = dom.getAttribute('style')
         var serialStyle = (strStyle ? strStyle.split(';') : []);
@@ -46,13 +67,18 @@ var DerbySimulator = (function () {
         extend(newStyle, style);
         serialStyle = '';
         for(var i in newStyle) {
-            serialStyle += i + ':' + newStyle[i] + ';';
+            if (newStyle[i]!== null) {
+                serialStyle += i + ':' + newStyle[i] + ';';
+            }
         }
         dom.setAttribute('style', serialStyle);
     }
     
 /*******************************************************************************************************/
-    
+    /**
+     * Point object
+     * @param {Object} data (x,y) object
+     */
     var Point = function(data) {
         this.x = (data.x ? data.x : 0);
         this.y = (data.y ? data.y : 0);
@@ -60,6 +86,10 @@ var DerbySimulator = (function () {
     
 /*******************************************************************************************************/
     
+    /**
+     * Chair object
+     * @param {Object} position (x, y) object
+     */
     var Chair = function(position) {
         this.position = position;
         this.x = (position.x ? position.x : 0);
@@ -67,14 +97,27 @@ var DerbySimulator = (function () {
         this.player = null;
     };
     
+    /**
+     * Check if the chair is free
+     * @returns {boolean} TRUE if free
+     */
     Chair.prototype.isFree = function() {
         return (this.player == null);
     }
     
+    /**
+     * Make a player sit on the chair
+     * @param {[[Type]]} player [[Description]]
+     */
     Chair.prototype.setPlayer = function(player) {
         this.player = player;
+        player.setPosition({x:this.x, y:this.y});
     }
     
+    /**
+     * Get the player on the chair
+     * @returns {Player} player on the chair
+     */
     Chair.prototype.getPlayer = function() {
         return this.player;
     }
@@ -95,19 +138,29 @@ var DerbySimulator = (function () {
             options
         );
         
+        // scale the global bounds
         this.opt.size.width *= this.opt.scale;
         this.opt.size.height *= this.opt.scale;
         
+        // Build graphical element
         this.element = this.buildElement();
         
+        // create the track
         this.track = new Track(this);
+        
+        // register all players
+        this.allPlayers = [];
+        
+        // Create the penalty box
         this.penaltyBox = new PenaltyBox(this);
+        
+        // Create the benches
         this.benches = {
             A: new Bench(this, {position:0}),
             B: new Bench(this, {position:1}),
         };
         
-        
+        // Create the teams
         this.teams = {
             A: new Team(this, 'A', 'red', 0, this.benches.A),
             B: new Team(this, 'B', 'green', 1, this.benches.B)
@@ -115,14 +168,26 @@ var DerbySimulator = (function () {
         
     };
     
+    /**
+     * Add SVG element in the scaled area
+     * @param {DomElement} elt SVG element
+     */
     Scene.prototype.addElement = function(elt) {
         this.container.appendChild(elt);
     }
     
+    /**
+     * Get the SVG element
+     * @returns {DomElement} SVG element
+     */
     Scene.prototype.getElement = function() {
         return this.element;
     };
 
+    /**
+     * Build the graphical element
+     * @returns {DomElement} SVG element
+     */
     Scene.prototype.buildElement = function() {
         
         var elt = new SvgElement('svg', {
@@ -143,18 +208,6 @@ var DerbySimulator = (function () {
         var desc = document.createElement('desc');
         desc.appendChild(document.createTextNode('Roller Derby Track'));
 
-        /*if (this.track) {
-            this.addElement(this.track.getElement());
-        }
-        
-        if (this.penaltyBox) {
-            this.addElement(this.penaltyBox.getElement());
-        }
-        
-        for (var i in this.benches) {
-            this.addElement(this.benches[i].getElement());
-        }*/
-
         elt.appendChild(title);
         elt.appendChild(desc);
         elt.appendChild(this.container);
@@ -165,42 +218,45 @@ var DerbySimulator = (function () {
 
     /**
      * Track object
-     * @param {object} options Options to be passed
+     * @param {Scene}  scene   parent Scene
+     * @param {object} options options to be passed
      */
     var Track = function(scene, options) {
+        // default options
         this.opt = extend(
-            {
-                offset: {x:0,y:0}
-            }, 
+            {}, 
             options
         );
         
+        // Build graphical element
         this.element = this.buildElement();
         scene.addElement(this.element);
     };
 
+    /**
+     * Get the SVG element
+     * @returns {DomElement} SVG element
+     */
     Track.prototype.getElement = function() {
         return this.element;
     };
     
+    /**
+     * Build the graphical element
+     * @returns {DomElement} SVG element
+     */
     Track.prototype.buildElement = function() {
 
         var trackElement = new SvgElement('g', {
             class: 'track',
-            transform: 'translate(' + this.opt.offset.x + ',' + this.opt.offset.y + ')'
+            'fill-rule':'evenodd'
         });
         
-        // Internal line
+        // Track limit
         trackElement.appendChild(new SvgElement('path', {
             class: 'limit',
-            d: 'M -533,-777 l 1066,-31 a 808,808,180,1,1,0,1616 l -1066,31 a 808,808,180,1,1,0,-1616'
-        }));
-
-        // External line
-        trackElement.appendChild(new SvgElement('path', {
-            class: 'limit',
-            d:  'M -533,-381 l 1066,0 a 381,381,180,1,1,0,762 l -1066,0 a 381,381,180,1,1,0,-762'
-        }));
+            d: 'M -533,-777 l 1066,-62 a 808,808,180,1,1,0,1616 l -1066,62 a 808,808,180,1,1,0,-1616 z M -533,-381 l 1066,0 a 381,381,180,1,1,0,762 l -1066,0 a 381,381,180,1,1,0,-762 z'
+        }));        
         
         // Jamline
         trackElement.appendChild(new SvgElement('path', {
@@ -211,7 +267,7 @@ var DerbySimulator = (function () {
         //PivotLine
         trackElement.appendChild(new SvgElement('path', {
             class: 'pivot-line',
-            d:  'M 382,-381 l 0,-420'
+            d:  'M 382,-381 l 0,-450'
         }));
         
         trackElement.appendChild(new SvgElement('path', {
@@ -275,9 +331,11 @@ var DerbySimulator = (function () {
     
     /**
      * Track object
-     * @param {object} options Options to be passed
+     * @param {Scene}  scene   parent Scene
+     * @param {object} options options to be passed
      */
     var PenaltyBox = function(scene, options) {
+        // default options
         this.opt = extend(
             {
                 offset: {x:0,y:0}
@@ -285,8 +343,7 @@ var DerbySimulator = (function () {
             options
         );
         
-        this.element = this.buildElement();
-        scene.addElement(this.element);
+        // Create the chairs
         this.chairs = [
             {
                 b1: new Chair({x:1650, y:-110}),
@@ -300,13 +357,25 @@ var DerbySimulator = (function () {
                 b3: new Chair({x:1550, y:145}),
                 j: new Chair({x:1650, y:40})
             }
-        ]
+        ];
+        
+        // Build graphical element
+        this.element = this.buildElement();
+        scene.addElement(this.element);
     };
     
+    /**
+     * Get the SVG element
+     * @returns {DomElement} SVG element
+     */
     PenaltyBox.prototype.getElement = function() {
         return this.element;
     };
     
+    /**
+     * Build the graphical element
+     * @returns {DomElement} SVG element
+     */
     PenaltyBox.prototype.buildElement = function() {
         var element = new SvgElement('g', {
             class:'penalty-box',
@@ -337,9 +406,11 @@ var DerbySimulator = (function () {
     
     /**
      * Bench object
-     * @param {object} options Options to be passed
+     * @param {Scene} scene    parent Scene
+     * @param {object} options options to be passed
      */
     var Bench = function(scene, options) {
+        // default options
         this.opt = extend(
             {
                 position:0,
@@ -348,6 +419,7 @@ var DerbySimulator = (function () {
             options
         );
         
+        // Create the chairs
         if (this.opt.position==0) {
             this.chairs = [
                 new Chair({x:1400, y:-830}),
@@ -366,14 +438,23 @@ var DerbySimulator = (function () {
             ];
         }
         
+        // Build graphical element
         this.element = this.buildElement();
         scene.addElement(this.element);
     };
     
+    /**
+     * Get the SVG element
+     * @returns {DomElement} SVG element
+     */
     Bench.prototype.getElement = function() {
         return this.element;
     };
     
+    /**
+     * Build the graphical element
+     * @returns {DomElement} SVG element
+     */
     Bench.prototype.buildElement = function() {
         var element;
         if (this.opt.position==0) {
@@ -409,6 +490,15 @@ var DerbySimulator = (function () {
     };
     
 /*******************************************************************************************************/
+    
+    /**
+     * Team object
+     * @param {Scene}    scene    parent Scene
+     * @param {string]}  name     team name
+     * @param {string}   color    team color
+     * @param {integer}  position 0 | 1
+     * @param {Bench}    bench    team bench
+     */
     var Team = function(scene, name, color, position, bench) {
         this.players = [];
         this.position = position;
@@ -422,57 +512,102 @@ var DerbySimulator = (function () {
         this.addPlayer(new Player(scene, {position:bench.chairs[4].position, role:'jammer'}));
     };
     
+    /**
+     * Add a player in the team
+     * @param {Player} player player to add
+     */
     Team.prototype.addPlayer = function(player) {
-        this.players.push(player);
+        if (this.players.indexOf(player)<0) {
+            this.players.push(player);
+        }
         player.setTeam(this);
     }
 
 /*******************************************************************************************************/
     
+    /**
+     * Player object
+     * @param {Scene}    scene   parent Scene
+     * @param {object} options options to be passed
+     */
     var Player = function(scene, options) {
         this.opt = extend(
             {
+                ray:30,
                 role:'blocker',
                 position: new Point({x:0,y:0})
             }, 
             options
         );
+        
+        // Update position
         this.x = this.opt.position.x;
         this.y = this.opt.position.y;
+        
+        // Normalize role (blocker, pivot, jammer)
         this.role = this.opt.role.toLowerCase();
+        
+        // No team
         this.team = null;
         
+        // register the player in the global list
+        scene.allPlayers.push(this);
+        
+        // Build graphical element
         this.element = this.buildElement();
         scene.addElement(this.element);
+        
+        // repaint the player if he is out of bounds
+        this.isInTrack();
     };
     
+    /**
+     * Get the SVG element
+     * @returns {DomElement} SVG element
+     */
     Player.prototype.getElement = function() {
         return this.element;
     };
     
+    /**
+     * Define the new positionof the player (in cm)
+     * @param {Object} point (x, y) new position in cm
+     */
     Player.prototype.setPosition = function(point) {
-      this.element.setAttribute('transform', 'translate(' + point.x + ', ' + point.y + ')');
+        this.element.setAttribute('transform', 'translate(' + point.x + ', ' + point.y + ')');
         this.x = point.x;
         this.y = point.y;
+        this.isInTrack();
     };
     
+    /**
+     * Set the team of the player
+     * @param {Team} team team of the player
+     */
     Player.prototype.setTeam = function(team) {
-        this.team = team
+        this.team = team;
+        if (team.players.indexOf(this)<0) {
+            team.players.push(this);
+        }
         addStyle(this.mark, {
             fill: team.color
         });
     };
     
+    /**
+     * Build the graphical element
+     * @returns {DomElement} SVG element
+     */
     Player.prototype.buildElement = function() {
         var elt = new SvgElement('g', {
             class:'player ' + this.position,
             transform: 'translate(' + this.x + ', ' + this.y + ')'
         });
         
-        var circle = new SvgElement('circle', {
+        this.border = new SvgElement('circle', {
             cx:0,
             cy:0,
-            r:30,
+            r:this.opt.ray,
             class:'player'
         });
         
@@ -500,16 +635,68 @@ var DerbySimulator = (function () {
                         style:'stroke:none'
                     });
         }
-
-        elt.appendChild(circle);
+        elt.appendChild(this.border);
         elt.appendChild(this.mark);
         return elt;
-    }
+    };
+    
+    /**
+     * Check if the player is inside the track
+     * @returns {Boolean} true if inside the track
+     */
+    Player.prototype.isInTrack = function() {
+        var _self = this;
+        var getExternalPolygon = function() {
+            var str = '';
+            var polygon = [];
+            for (var angle = Math.PI/2; angle <3*Math.PI/2; angle += Math.PI/36) {
+                polygon.push(new Point({
+                    x: (808 - _self.opt.ray) * Math.cos(angle)-533,
+                    y: (808 - _self.opt.ray) * Math.sin(angle)+31
+                }));
+            }
+            for (var angle = 3*Math.PI/2; angle <5*Math.PI/2; angle += Math.PI/36) {
+                polygon.push(new Point({
+                    x: (808 - _self.opt.ray) * Math.cos(angle)+533,
+                    y: (808 - _self.opt.ray) * Math.sin(angle)-31
+                }));
+            }
+            console.log(str);
+            return polygon;
+        };
+        var getInternalPolygon = function() {
+            var polygon = [];
+            for (var angle = Math.PI/2; angle <3*Math.PI/2; angle += Math.PI/36) {
+                polygon.push(new Point({
+                    x: (381 + _self.opt.ray) * Math.cos(angle)-533,
+                    y: (381 + _self.opt.ray) * Math.sin(angle)
+                }));
+            }
+            for (var angle = 3*Math.PI/2; angle <5*Math.PI/2; angle += Math.PI/36) {
+                polygon.push(new Point({
+                    x: (381 + _self.opt.ray) * Math.cos(angle)+533,
+                    y: (381 + _self.opt.ray) * Math.sin(angle)
+                }));
+            }
+            return polygon;
+        };
+        
+        if ((isPointInPoly(getExternalPolygon(), {x:this.x, y:this.y})) && (!isPointInPoly(getInternalPolygon(), {x:this.x, y:this.y}))) {
+            addStyle(this.border, {stroke:null});
+            return true;
+        } else {
+            addStyle(this.border, {stroke:'#aaaaaa'});
+            return false;
+        }
+    };
+    
+/**************************************************************************************************************/
     
     return {
         Scene: Scene,
         Track: Track,
         PenaltyBox: PenaltyBox,
         Team: Team,
+        Player: Player
     }
 })();
