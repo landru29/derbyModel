@@ -39,3 +39,16 @@ g.player  circle {
     stroke-width: 10px;
     fill:#ffffff;
 }
+
+.movable {
+    cursor: move;
+}
+
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

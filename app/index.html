@@ -6,11 +6,49 @@
         <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.3.min.js"></script>
         <script type="text/javascript" src="scripts/track.js"></script>
         <link rel="stylesheet" href="styles/track.css">
+        <style>
+            g.player {
+                cursor:move;
+            }
+        </style>
         <script>
+            var movingPlayer = null;
+            
             $(document).ready(function(){
                 myScene = new DerbySimulator.Scene({scale:0.3});
                 $('body').get(0).appendChild(myScene.getElement());
+                
+                var allPlayers = $('g.player');
+                allPlayers.each(function(index, element) {
+                    $(element).mousedown(function(event) {
+                        var id = $(element).attr('id')
+                        movingPlayer = {
+                            player: myScene.findObject(id),
+                            clientX: event.clientX,
+                            clientY: event.clientY
+                        };
+                    });
+                });
+                
+                $(document).mousemove(function(event){
+                    if(movingPlayer === null) return;
+                    movingPlayer.player.setPosition({
+                        deltaX:(event.clientX - movingPlayer.clientX) / myScene.opt.scale,
+                        deltaY:(event.clientY - movingPlayer.clientY) / myScene.opt.scale
+                    });
+                    movingPlayer.clientX = event.clientX;
+                    movingPlayer.clientY = event.clientY;
+
+                });
+                
+                $(document).mouseup(function(){
+                    movingPlayer = null;
+                });
+                
+                
             });
+            
+            
         </script>
     </head>
     <body>

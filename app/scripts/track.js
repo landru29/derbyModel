@@ -14,6 +14,17 @@ var DerbySimulator = (function () {
     };
     
     /**
+     * Generate a UUID
+     * @returns {String} uuid
+     */
+    var getUUID = function() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+            return v.toString(16);
+        });
+    }
+
+    /**
      * Detect if a point is inside a polygone
      *  Jonas Raoni Soares Silva
      *  http://jsfromhell.com/math/is-point-in-poly [rev. #0]
@@ -84,6 +95,15 @@ var DerbySimulator = (function () {
         this.y = (data.y ? data.y : 0);
     };
     
+    /**
+     * Compute distance between 2 points
+     * @param   {Point}   point Second point
+     * @returns {fload} distance
+     */
+    Point.prototype.distance = function(point) {
+        return Math.sqrt(Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2));
+    };
+    
 /*******************************************************************************************************/
     
     /**
@@ -129,9 +149,14 @@ var DerbySimulator = (function () {
      * @param {object} options Options to be passed
      */
     var Scene = function(options) {
+        // register all scene objects
+        this.allObjects = {};
+        
+        // generate id
+        this.id = getUUID();
+        
         this.opt = extend(
             {
-                id: 'scene',
                 size: {width:3250,height:2000},
                 scale:1
             }, 
@@ -165,7 +190,7 @@ var DerbySimulator = (function () {
             A: new Team(this, 'A', 'red', 0, this.benches.A),
             B: new Team(this, 'B', 'green', 1, this.benches.B)
         }
-        
+
     };
     
     /**
@@ -174,6 +199,23 @@ var DerbySimulator = (function () {
      */
     Scene.prototype.addElement = function(elt) {
         this.container.appendChild(elt);
+    }
+    
+    /**
+     * Register an object
+     * @param {object} obj object to register
+     */
+    Scene.prototype.registerObject = function(obj) {
+        this.allObjects[obj.id] = obj;
+    }
+    
+    /**
+     * Get an object by ID
+     * @param   {string} id identifier of the object
+     * @returns {object} object
+     */
+    Scene.prototype.findObject = function(id) {
+        return this.allObjects[id];
     }
     
     /**
@@ -194,7 +236,8 @@ var DerbySimulator = (function () {
             width: this.opt.size.width,
             height: this.opt.size.height,
             version: '1.1',
-            id: this.opt.id
+            class: 'scene',
+            id: this.id
         });
         elt.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
 
@@ -222,6 +265,13 @@ var DerbySimulator = (function () {
      * @param {object} options options to be passed
      */
     var Track = function(scene, options) {
+        // generate id
+        this.id = getUUID();
+        
+        // parent root
+        this.scene = scene;
+        scene.registerObject(this);
+        
         // default options
         this.opt = extend(
             {}, 
@@ -249,7 +299,8 @@ var DerbySimulator = (function () {
 
         var trackElement = new SvgElement('g', {
             class: 'track',
-            'fill-rule':'evenodd'
+            'fill-rule':'evenodd',
+            id: this.id
         });
         
         // Track limit
@@ -335,6 +386,13 @@ var DerbySimulator = (function () {
      * @param {object} options options to be passed
      */
     var PenaltyBox = function(scene, options) {
+        // generate id
+        this.id = getUUID();
+        
+        // parent root
+        this.scene = scene;
+        scene.registerObject(this);
+        
         // default options
         this.opt = extend(
             {
@@ -379,7 +437,8 @@ var DerbySimulator = (function () {
     PenaltyBox.prototype.buildElement = function() {
         var element = new SvgElement('g', {
             class:'penalty-box',
-            transform:'matrix(0 -1 1 0 ' + (this.opt.offset.x + 1600) + ' ' + (this.opt.offset.y + 210) + ')'
+            transform:'matrix(0 -1 1 0 ' + (this.opt.offset.x + 1600) + ' ' + (this.opt.offset.y + 210) + ')',
+            id: this.id
         });
         
         element.appendChild(new SvgElement('rect', {
@@ -393,6 +452,7 @@ var DerbySimulator = (function () {
         element.appendChild(new SvgElement('text', {
             fill:'red',
             style:'font-size:60px',
+            class:'noselect',
             x:210,
             y:65,
             'text-anchor': 'middle',
@@ -410,6 +470,13 @@ var DerbySimulator = (function () {
      * @param {object} options options to be passed
      */
     var Bench = function(scene, options) {
+        // generate id
+        this.id = getUUID();
+        
+        // parent root
+        this.scene = scene;
+        scene.registerObject(this);
+        
         // default options
         this.opt = extend(
             {
@@ -460,12 +527,14 @@ var DerbySimulator = (function () {
         if (this.opt.position==0) {
             element = new SvgElement('g', {
                 class:'bench',
-                transform:'matrix(0.707 0.707 -0.707 0.707 ' + (this.opt.offset.x + 1400) + ' ' + (this.opt.offset.y -900) + ')'
+                transform:'matrix(0.707 0.707 -0.707 0.707 ' + (this.opt.offset.x + 1400) + ' ' + (this.opt.offset.y -900) + ')',
+                id: this.id
             });
         } else {
             element = new SvgElement('g', {
                 class:'bench',
-                transform:'matrix(0.707 -0.707 0.707 0.707 ' + (this.opt.offset.x + 1325) + ' ' + (this.opt.offset.y + 805) + ')'
+                transform:'matrix(0.707 -0.707 0.707 0.707 ' + (this.opt.offset.x + 1325) + ' ' + (this.opt.offset.y + 805) + ')',
+                id: this.id
             });
         }
         
@@ -480,6 +549,7 @@ var DerbySimulator = (function () {
         element.appendChild(new SvgElement('text', {
             fill:'green',
             style:'font-size:60px',
+            class:'noselect',
             x:200,
             y:65,
             'text-anchor': 'middle',
@@ -500,6 +570,13 @@ var DerbySimulator = (function () {
      * @param {Bench}    bench    team bench
      */
     var Team = function(scene, name, color, position, bench) {
+        // generate id
+        this.id = getUUID();
+        
+        // parent root
+        this.scene = scene;
+        scene.registerObject(this);
+        
         this.players = [];
         this.position = position;
         this.color = color;
@@ -531,6 +608,14 @@ var DerbySimulator = (function () {
      * @param {object} options options to be passed
      */
     var Player = function(scene, options) {
+        // generate id
+        this.id = getUUID();
+        
+        // parent root
+        this.scene = scene;
+        scene.registerObject(this);
+        
+        // default options
         this.opt = extend(
             {
                 ray:30,
@@ -557,9 +642,41 @@ var DerbySimulator = (function () {
         this.element = this.buildElement();
         scene.addElement(this.element);
         
+        // repaint the player if there is a collision
+        this.checkCollision();
+        
         // repaint the player if he is out of bounds
         this.isInTrack();
+        
+        this.slave = true;
     };
+    
+    Player.prototype.checkCollision = function() {
+        var myPoint = new Point({x:this.x, y:this.y});
+        for (var i in this.scene.allPlayers) {
+            var player = this.scene.allPlayers[i];
+            if (player.id != this.id) {
+                var centerDistance = myPoint.distance(new Point({x:player.x, y:player.y}));
+                var distance = centerDistance - (this.opt.ray + player.opt.ray);
+                if (distance < 0) {
+                    //There is a collision !
+                    if (player.slave === true) {
+                        var vector = {
+                            deltaX: Math.abs(distance) * (player.x - this.x) / centerDistance,
+                            deltaY: Math.abs(distance) * (player.y - this.y) / centerDistance
+                        };
+                        player.setPosition(vector, true);
+                    } else {
+                        var vector = {
+                            deltaX: Math.abs(distance) * (this.x - player.x) / centerDistance,
+                            deltaY: Math.abs(distance) * (this.y - player.y) / centerDistance
+                        };
+                        this.setPosition(vector, true);
+                    }
+                }
+            }
+        }
+    }
     
     /**
      * Get the SVG element
@@ -571,12 +688,32 @@ var DerbySimulator = (function () {
     
     /**
      * Define the new positionof the player (in cm)
-     * @param {Object} point (x, y) new position in cm
+     * @param {Object}  point (x, y) new position in cm
+     * @param {boolean} slave facultative parameter to specify if the movment is a consequece of a collision
      */
-    Player.prototype.setPosition = function(point) {
-        this.element.setAttribute('transform', 'translate(' + point.x + ', ' + point.y + ')');
-        this.x = point.x;
-        this.y = point.y;
+    Player.prototype.setPosition = function(point, slave) {
+        if (slave) {
+            this.slave = true;
+        } else {
+            this.slave = false;
+            for (var i in this.scene.allPlayers) {
+                this.scene.allPlayers[i].slave = true;
+            }
+        }
+        
+        if (point.x) {
+            this.x = point.x;
+        } else {
+            this.x += point.deltaX;
+        }
+        if (point.y) {
+            this.y = point.y;
+        } else {
+            this.y += point.deltaY;
+        }
+        this.element.setAttribute('transform', 'translate(' + this.x + ', ' + this.y + ')');
+
+        this.checkCollision();
         this.isInTrack();
     };
     
@@ -600,8 +737,9 @@ var DerbySimulator = (function () {
      */
     Player.prototype.buildElement = function() {
         var elt = new SvgElement('g', {
-            class:'player ' + this.position,
-            transform: 'translate(' + this.x + ', ' + this.y + ')'
+            class:'player ' + this.role,
+            transform: 'translate(' + this.x + ', ' + this.y + ')',
+            id: this.id
         });
         
         this.border = new SvgElement('circle', {
@@ -661,7 +799,6 @@ var DerbySimulator = (function () {
                     y: (808 - _self.opt.ray) * Math.sin(angle)-31
                 }));
             }
-            console.log(str);
             return polygon;
         };
         var getInternalPolygon = function() {
