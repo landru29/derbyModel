@@ -647,10 +647,11 @@ var DerbySimulator = (function () {
         
         // repaint the player if he is out of bounds
         this.isInTrack();
-        
-        this.slave = true;
     };
     
+    /**
+     * Check the collision and make the other players move
+     */
     Player.prototype.checkCollision = function() {
         var myPoint = new Point({x:this.x, y:this.y});
         for (var i in this.scene.allPlayers) {
@@ -659,20 +660,13 @@ var DerbySimulator = (function () {
                 var centerDistance = myPoint.distance(new Point({x:player.x, y:player.y}));
                 var distance = centerDistance - (this.opt.ray + player.opt.ray);
                 if (distance < 0) {
-                    //There is a collision !
-                    if (player.slave === true) {
                         var vector = {
                             deltaX: Math.abs(distance * 1.2) * (player.x - this.x) / centerDistance,
                             deltaY: Math.abs(distance * 1.2) * (player.y - this.y) / centerDistance
                         };
-                        player.setPosition(vector, true);
-                    } else {
-                        var vector = {
-                            deltaX: Math.abs(distance * 1.2) * (this.x - player.x) / centerDistance,
-                            deltaY: Math.abs(distance * 1.2) * (this.y - player.y) / centerDistance
-                        };
-                        this.setPosition(vector, true);
-                    }
+                        // push the player
+                        player.setPosition(vector);
+    
                 }
             }
         }
@@ -689,18 +683,8 @@ var DerbySimulator = (function () {
     /**
      * Define the new positionof the player (in cm)
      * @param {Object}  point (x, y) new position in cm
-     * @param {boolean} slave facultative parameter to specify if the movment is a consequece of a collision
      */
-    Player.prototype.setPosition = function(point, slave) {
-        if (slave) {
-            this.slave = true;
-        } else {
-            this.slave = false;
-            for (var i in this.scene.allPlayers) {
-                this.scene.allPlayers[i].slave = true;
-            }
-        }
-        
+    Player.prototype.setPosition = function(point) {
         if (point.x) {
             this.x = point.x;
         } else {
