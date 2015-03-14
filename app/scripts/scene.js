@@ -112,5 +112,72 @@
         return elt;
     };
     
+    Scene.prototype.getPack = function() {
+        // *** get all players inside the track which are no jammer ***
+        var playersInside = [];
+        for (var i in this.allHumans) {
+            if ((this.allHumans[i].humanType === 'player') && 
+                (this.allHumans[i].role !== 'jammer') && 
+                (this.allHumans[i].isInTrack())) {
+                playersInside.push(this.allHumans[i]);
+            }
+        }
+        
+        // *** build 3m groups with minimum two players from two teams ***
+        // Check if a player is near (3m) a group of players
+        var in3mGroup = function(playerGroup, player) {
+            for (var i in playerGroup) {
+                if (player.trackDistance(playerGroup[i].position)<=300) {
+                    return true;
+                }
+            }
+            return false;
+        };
+        
+        var maxGroupSize = 0;
+        var group3mCollection = [];
+        while (playersInside.length>0) {
+            // take first player of the list an initialize a group
+            var group = playersInside.splice(0,1);
+            
+            // Check the proximity of the other players
+            for (var i = playersInside.length-1; i>=0; i--) {
+                if (in3mGroup(group, playersInside[i])) {
+                    // the player is near the group; take it from the list
+                    group.push(playersInside.splice(i, 1)[0]);
+                }
+            }
+            // check if there is 2 teams in the group
+            if ((function(gp) {
+                    for (var i=1; i<group.length; i++) {
+                        if (group[i].team.id != group[0].team.id) {
+                            return true;
+                        }
+                    }
+                    return false;
+                })(group)) {
+                // register the group of players
+                group3mCollection.push(group);
+                if (group.length>maxGroupSize) {
+                    maxGroupSize = group.length;
+                }
+            }
+        }
+        
+    
+        // get the largest group
+        for (var i=group3mCollection.length-1; i>=0; i--) {
+            if (group3mCollection[i].length < maxGroupSize) {
+                group3mCollection.splice(i,1);
+            }
+        }
+        
+        if (group3mCollection.length ===1) {
+            return group3mCollection[0];
+        } else {
+            return null
+        }
+    }
+    
     _DerbySimulator.prototype.Scene = Scene;
 })();
