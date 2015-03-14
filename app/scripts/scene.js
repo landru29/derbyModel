@@ -29,7 +29,7 @@
         this.track = new $derby.Track(this);
         
         // register all players
-        this.allPlayers = [];
+        this.allHumans = [];
         
         // Create the penalty box
         this.penaltyBox = new $derby.PenaltyBox(this);

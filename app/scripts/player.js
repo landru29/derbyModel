@@ -32,7 +32,7 @@
         this.team = null;
         
         // register the player in the global list
-        scene.allPlayers.push(this);
+        scene.allHumans.push(this);
         
         // Build graphical element
         this.element = this.buildElement();
@@ -50,8 +50,8 @@
      */
     Player.prototype.checkCollision = function() {
         //var myVector = new $derby.Vector({x:this.x, y:this.y});
-        for (var i in this.scene.allPlayers) {
-            var player = this.scene.allPlayers[i];
+        for (var i in this.scene.allHumans) {
+            var player = this.scene.allHumans[i];
             if (player.id != this.id) {
                 var centerDistance = this.position.distance(player.position);
                 var distance = centerDistance - (this.opt.ray + player.opt.ray);
@@ -200,6 +200,40 @@
             return false;
         }
     };
+    
+    Player.prototype.trackDistance = function(refPoint) {
+        var ray = 534;
+        var projection = function(point) {
+            //The origin of the projection is the pivot line
+            if ((point.x>=-533) && (point.x<=533)) {
+                // The projection will be on the linear part
+                if (pointn.y>0) {
+                    return Math.PI * ray + 533 + point.y; 
+                } else {
+                    return 2 * Math.PI * ray + 3 * 533 - point.y;
+                }
+            }
+            if (this.x<-533) {
+                var alpha = (Math.atan( point.y / (point.x+533)) + Math.PI/2) % Math.PI;
+                return ray * alpha;
+                // The projection is on the curved part, near the pivot line
+            }
+            if (this.x>533) {
+                var alpha = Math.PI/2 - Math.atan(point.y / (point.x-533));
+                return Math.PI * ray + 2 * 533 + ray * alpha;
+                // The projection is on the curved part, at the oppisite of the pivot line
+            }
+        };
+        var projectionPerimeter = 533 * 4 + 2 * Math.PI * ray;
+        
+        var playerPosition = projection(this.position);
+        var refPosition = projection(refPoint);
+        return Math.min(
+            Math.abs(playerPosition - refPosition), 
+            Math.abs(projectionPerimeter + refPosition - playerPosition) % projectionPerimeter
+        );
+    }
+    
     
     _DerbySimulator.prototype.Player = Player;
 })();
