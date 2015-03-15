@@ -127,7 +127,8 @@
         // Check if a player is near (3m) a group of players
         var in3mGroup = function(playerGroup, player) {
             for (var i in playerGroup) {
-                if (player.trackDistance(playerGroup[i].position)<=300) {
+                var distance = player.trackDistance(playerGroup[i].position);
+                if (distance <= (300 + player.opt.ray + playerGroup[i].opt.ray)) {
                     return true;
                 }
             }
