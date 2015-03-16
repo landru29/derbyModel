@@ -35,7 +35,19 @@ g.track  path.three-meters {
 }
 
 g.player  circle {
+    stroke:#aaaaaa;
+    stroke-width: 10px;
+    fill:#ffffff;
+}
+
+g.player.in-track circle {
     stroke:#819FF7;
+    stroke-width: 10px;
+    fill:#ffffff;
+}
+
+g.player.in-track.in-pack circle {
+    stroke:#6bea8d;
     stroke-width: 10px;
     fill:#ffffff;
 }

@@ -45,6 +45,7 @@
         
         // repaint the player if he is out of bounds
         this.isInTrack();
+        scene.computePack();
     };
     
     /**
@@ -65,7 +66,7 @@
                 }
             }
         }
-    }
+    };
     
     /**
      * Get the SVG element
@@ -91,6 +92,7 @@
 
         this.checkCollision();
         this.isInTrack();
+        this.scene.computePack();
     };
     
     /**
@@ -141,6 +143,7 @@
                     });
                 break;
                 case 'blocker':
+                /* falls through */
                 default: 
                     this.mark = new $derby.SvgElement('circle', {
                         cx:0,
@@ -163,42 +166,42 @@
         var getExternalPolygon = function() {
             var str = '';
             var polygon = [];
-            for (var angle = Math.PI/2; angle <3*Math.PI/2; angle += Math.PI/36) {
+            for (var angle1 = Math.PI/2; angle1 <3*Math.PI/2; angle1 += Math.PI/36) {
                 polygon.push(new $derby.Vector({
-                    x: (808 - _self.opt.ray) * Math.cos(angle)-533,
-                    y: (808 - _self.opt.ray) * Math.sin(angle)+31
+                    x: (808 - _self.opt.ray) * Math.cos(angle1)-533,
+                    y: (808 - _self.opt.ray) * Math.sin(angle1)+31
                 }));
             }
-            for (var angle = 3*Math.PI/2; angle <5*Math.PI/2; angle += Math.PI/36) {
+            for (var angle2 = 3*Math.PI/2; angle2 <5*Math.PI/2; angle2 += Math.PI/36) {
                 polygon.push(new $derby.Vector({
-                    x: (808 - _self.opt.ray) * Math.cos(angle)+533,
-                    y: (808 - _self.opt.ray) * Math.sin(angle)-31
+                    x: (808 - _self.opt.ray) * Math.cos(angle2)+533,
+                    y: (808 - _self.opt.ray) * Math.sin(angle2)-31
                 }));
             }
             return polygon;
         };
         var getInternalPolygon = function() {
             var polygon = [];
-            for (var angle = Math.PI/2; angle <3*Math.PI/2; angle += Math.PI/36) {
+            for (var angle1 = Math.PI/2; angle1 <3*Math.PI/2; angle1 += Math.PI/36) {
                 polygon.push(new $derby.Vector({
-                    x: (381 + _self.opt.ray) * Math.cos(angle)-533,
-                    y: (381 + _self.opt.ray) * Math.sin(angle)
+                    x: (381 + _self.opt.ray) * Math.cos(angle1)-533,
+                    y: (381 + _self.opt.ray) * Math.sin(angle1)
                 }));
             }
-            for (var angle = 3*Math.PI/2; angle <5*Math.PI/2; angle += Math.PI/36) {
+            for (var angle2 = 3*Math.PI/2; angle2 <5*Math.PI/2; angle2 += Math.PI/36) {
                 polygon.push(new $derby.Vector({
-                    x: (381 + _self.opt.ray) * Math.cos(angle)+533,
-                    y: (381 + _self.opt.ray) * Math.sin(angle)
+                    x: (381 + _self.opt.ray) * Math.cos(angle2)+533,
+                    y: (381 + _self.opt.ray) * Math.sin(angle2)
                 }));
             }
             return polygon;
         };
         
         if (($derby.isPointInPoly(getExternalPolygon(), this.position)) && (!$derby.isPointInPoly(getInternalPolygon(), this.position))) {
-            $derby.addStyle(this.border, {stroke:null});
+            $derby.addClass(this.getElement(), 'in-track');
             return true;
         } else {
-            $derby.addStyle(this.border, {stroke:'#aaaaaa'});
+            $derby.removeClass(this.getElement(), 'in-track');
             return false;
         }
     };
@@ -208,7 +211,7 @@
      * @param   {Vector} refPoint reference point for measurment
      * @returns {float}           distance in cm
      */
-    Player.prototype.trackDistance = function(refPoint) {
+    Player.prototype.trackAlgebraicDistance = function(refPoint) {
         var ray = 534;
         var projection = function(point) {
             //The origin of the projection is the pivot line
@@ -221,13 +224,13 @@
                 }
             }
             if (point.x<-533) {
-                var alpha = Math.PI - (Math.atan( point.y / (point.x+533)) + Math.PI/2) % Math.PI;
-                return ray * alpha;
+                var alpha1 = Math.PI - (Math.atan( point.y / (point.x+533)) + Math.PI/2) % Math.PI;
+                return ray * alpha1;
                 // The projection is on the curved part, near the pivot line
             }
             if (point.x>533) {
-                var alpha = Math.PI/2 - Math.atan(point.y / (point.x-533));
-                return Math.PI * ray + 2 * 533 + ray * alpha;
+                var alpha2 = Math.PI/2 - Math.atan(point.y / (point.x-533));
+                return Math.PI * ray + 2 * 533 + ray * alpha2;
                 // The projection is on the curved part, at the oppisite of the pivot line
             }
         };
@@ -239,10 +242,12 @@
         var a = Math.abs(projectionPerimeter + refPosition - playerPosition) % projectionPerimeter;
         var b = Math.abs(playerPosition - refPosition);
         
-        return Math.min(
-            Math.abs(playerPosition - refPosition), 
-            Math.abs(projectionPerimeter + refPosition - playerPosition) % projectionPerimeter
-        );
+        var possiblePosition = {};
+        possiblePosition[Math.abs(playerPosition - refPosition)] = playerPosition - refPosition;
+        possiblePosition[Math.abs(playerPosition - projectionPerimeter - refPosition)] = playerPosition - projectionPerimeter - refPosition;
+        
+        var minimumDistance = Object.keys(possiblePosition).sort(function(a,b){return (parseInt(a)>parseFloat(b));});
+        return possiblePosition[minimumDistance[0]];
     };
     
     

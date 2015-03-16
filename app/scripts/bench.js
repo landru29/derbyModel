@@ -22,7 +22,7 @@
         );
         
         // Create the chairs
-        if (this.opt.position==0) {
+        if (parseInt(''+this.opt.position, 10) === 0) {
             this.chairs = [
                 new $derby.Chair({x:1400, y:-830}),
                 new $derby.Chair({x:1450, y:-780}),
@@ -59,7 +59,7 @@
      */
     Bench.prototype.buildElement = function() {
         var element;
-        if (this.opt.position==0) {
+        if (parseInt('' + this.opt.position, 10) === 0) {
             element = new $derby.SvgElement('g', {
                 class:'bench',
                 transform:'matrix(0.707 0.707 -0.707 0.707 ' + (this.opt.offset.x + 1400) + ' ' + (this.opt.offset.y -900) + ')',

@@ -59,7 +59,7 @@
         this.x *= number;
         this.y *= number;
         return this;
-    }
+    };
     
     _DerbySimulator.prototype.Vector = Vector;
 })();

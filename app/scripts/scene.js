@@ -44,7 +44,7 @@
         this.teams = {
             A: new $derby.Team(this, 'A', 'red', 0, this.benches.A),
             B: new $derby.Team(this, 'B', 'green', 1, this.benches.B)
-        }
+        };
 
     };
     
@@ -54,7 +54,7 @@
      */
     Scene.prototype.addElement = function(elt) {
         this.container.appendChild(elt);
-    }
+    };
     
     /**
      * Register an object
@@ -62,7 +62,7 @@
      */
     Scene.prototype.registerObject = function(obj) {
         this.allObjects[obj.id] = obj;
-    }
+    };
     
     /**
      * Get an object by ID
@@ -71,7 +71,7 @@
      */
     Scene.prototype.findObject = function(id) {
         return this.allObjects[id];
-    }
+    };
     
     /**
      * Get the SVG element
@@ -112,51 +112,87 @@
         return elt;
     };
     
-    Scene.prototype.getPack = function() {
-        // *** get all players inside the track which are no jammer ***
+    /**
+     * Get all the players inside the track
+     * @returns {array(Player)} list of players inside the track
+     */
+    Scene.prototype.getInTrackPlayers = function() {
         var playersInside = [];
         for (var i in this.allHumans) {
-            if ((this.allHumans[i].humanType === 'player') && 
-                (this.allHumans[i].role !== 'jammer') && 
-                (this.allHumans[i].isInTrack())) {
-                playersInside.push(this.allHumans[i]);
+            if ((this.allHumans[i].humanType === 'player')){
+                if (this.allHumans[i].isInTrack()) {
+                    playersInside.push(this.allHumans[i]);
+                }
+            }
+        }
+        return playersInside;
+    };
+    
+    /**
+     * Define the pack
+     * @returns {Array[Players]} List of players in the pack | null
+     */
+    Scene.prototype.computePack = function() {
+        for (var i in this.allHumans) {
+            $derby.removeClass(this.allHumans[i].getElement(), 'in-pack');
+            delete (this.allHumans[i].forward);
+            delete (this.allHumans[i].backyard);
+        }
+        // *** get all players inside the track which are no jammer ***
+        var blockersInside = [];
+        var inTrackPlayers = this.getInTrackPlayers();
+        for (var j in inTrackPlayers) {
+            if (inTrackPlayers[j].role !== 'jammer'){
+                blockersInside.push(inTrackPlayers[j]);
             }
         }
         
         // *** build 3m groups with minimum two players from two teams ***
         // Check if a player is near (3m) a group of players
         var in3mGroup = function(playerGroup, player) {
+            var inPack = false;
             for (var i in playerGroup) {
-                var distance = player.trackDistance(playerGroup[i].position);
-                if (distance <= (300 + player.opt.ray + playerGroup[i].opt.ray)) {
+                var distance = player.trackAlgebraicDistance(playerGroup[i].position);
+                if (Math.abs(distance) <= (300 + player.opt.ray + playerGroup[i].opt.ray)) {
+                    if ((playerGroup[i].forward) && (distance > 0)) {
+                        player.forward = true;
+                        playerGroup[i].forward = false;
+                    }
+                    if ((playerGroup[i].backyard) && (distance < 0)) {
+                        player.backyard = true;
+                        playerGroup[i].backyard = false;
+                    }
+                    inPack = true;
+                }
+            }
+            return inPack;
+        };
+        
+        var maxGroupSize = 0;
+        var group3mCollection = [];
+        var hasTwoTeams = function(gp) {
+            for (var k=1; k<gp.length; k++) {
+                if (gp[k].team.id != gp[0].team.id) {
                     return true;
                 }
             }
             return false;
         };
-        
-        var maxGroupSize = 0;
-        var group3mCollection = [];
-        while (playersInside.length>0) {
+        while (blockersInside.length>0) {
             // take first player of the list an initialize a group
-            var group = playersInside.splice(0,1);
+            var group = blockersInside.splice(0,1);
+            group[0].backyard = true;
+            group[0].forward = true;
             
             // Check the proximity of the other players
-            for (var i = playersInside.length-1; i>=0; i--) {
-                if (in3mGroup(group, playersInside[i])) {
+            for (var m = blockersInside.length-1; m>=0; m--) {
+                if (in3mGroup(group, blockersInside[m])) {
                     // the player is near the group; take it from the list
-                    group.push(playersInside.splice(i, 1)[0]);
+                    group.push(blockersInside.splice(m, 1)[0]);
                 }
             }
             // check if there is 2 teams in the group
-            if ((function(gp) {
-                    for (var i=1; i<group.length; i++) {
-                        if (group[i].team.id != group[0].team.id) {
-                            return true;
-                        }
-                    }
-                    return false;
-                })(group)) {
+            if (hasTwoTeams(group)) {
                 // register the group of players
                 group3mCollection.push(group);
                 if (group.length>maxGroupSize) {
@@ -166,19 +202,35 @@
         }
         
     
-        // get the largest group
-        for (var i=group3mCollection.length-1; i>=0; i--) {
-            if (group3mCollection[i].length < maxGroupSize) {
-                group3mCollection.splice(i,1);
+        // *** delete the tinyest groups ***
+        for (var n=group3mCollection.length-1; n>=0; n--) {
+            if (group3mCollection[n].length < maxGroupSize) {
+                group3mCollection.splice(n,1);
             }
         }
         
+        // check that there is only one group
+        this.pack = null;
         if (group3mCollection.length ===1) {
-            return group3mCollection[0];
-        } else {
-            return null
+            var packPlayers = group3mCollection[0];
+            var backyardPlayer = null;
+            var forwardPlayer = null;
+            for (var p in packPlayers) {
+                if (packPlayers[p].backyard) {
+                    backyardPlayer = packPlayers[p];
+                }
+                if (packPlayers[p].forward) {
+                    forwardPlayer = packPlayers[p];
+                }
+                $derby.addClass(packPlayers[p].getElement(), 'in-pack');
+            }
+            this.pack = {
+                players: packPlayers,
+                forward: forwardPlayer,
+                backyard: backyardPlayer
+            };
         }
-    }
+    };
     
     _DerbySimulator.prototype.Scene = Scene;
 })();

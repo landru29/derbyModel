@@ -93,24 +93,24 @@
         }));
 
         for (var i=1; i<6; i++) {
-            var cosinus = Math.cos(i*2.14/3.81);
-            var sinus = Math.sin(i*2.14/3.81);
-            var ray1 = 481;
-            var ray2 = 681;
+            var cosinus1 = Math.cos(i*2.14/3.81);
+            var sinus1 = Math.sin(i*2.14/3.81);
+            var ray11 = 481;
+            var ray12 = 681;
             trackElement.appendChild(new $derby.SvgElement('path', {
                 class: 'three-meters',
-                d:'M ' + Math.round(-533 - ray1 * sinus) + ',' + Math.round(-ray1 * cosinus) + ' L ' + Math.round(-533-ray2 * sinus) + ',' + Math.round(-ray2 * cosinus)
+                d:'M ' + Math.round(-533 - ray11 * sinus1) + ',' + Math.round(-ray11 * cosinus1) + ' L ' + Math.round(-533-ray12 * sinus1) + ',' + Math.round(-ray12 * cosinus1)
             }));
         }
 
-        for (var i=1; i<6; i++) {
-            var cosinus = Math.cos(i*2.14/3.81);
-            var sinus = Math.sin(i*2.14/3.81);
-            var ray1 = 481;
-            var ray2 = 681;
+        for (var j=1; j<6; j++) {
+            var cosinus2 = Math.cos(j*2.14/3.81);
+            var sinus2 = Math.sin(j*2.14/3.81);
+            var ray21 = 481;
+            var ray22 = 681;
             trackElement.appendChild(new $derby.SvgElement('path', {
                 class: 'three-meters',
-                d:'M ' + Math.round(533 + ray1 * sinus) + ',' + Math.round(ray1 * cosinus) + ' L ' + Math.round(533+ray2 * sinus) + ',' + Math.round(ray2 * cosinus)
+                d:'M ' + Math.round(533 + ray21 * sinus2) + ',' + Math.round(ray21 * cosinus2) + ' L ' + Math.round(533+ray22 * sinus2) + ',' + Math.round(ray22 * cosinus2)
             }));
         }
 

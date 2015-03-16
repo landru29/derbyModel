@@ -22,8 +22,9 @@
             var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
             return v.toString(16);
         });
-    }
+    };
 
+    /* jshint ignore:start */
     /**
      * Detect if a point is inside a polygone
      *  Jonas Raoni Soares Silva
@@ -39,6 +40,7 @@
             && (c = !c);
         return c;
     };
+    /* jshint ignore:end */
     
     /**
      * Create a svg element
@@ -64,7 +66,7 @@
      * @param {object}     style css object
      */
     _DerbySimulator.prototype.addStyle = function(dom, style) {
-        var strStyle = dom.getAttribute('style')
+        var strStyle = dom.getAttribute('style');
         var serialStyle = (strStyle ? strStyle.split(';') : []);
         var newStyle = {};
         for(var i in serialStyle) {
@@ -77,12 +79,40 @@
         }
         $derby.extend(newStyle, style);
         serialStyle = '';
-        for(var i in newStyle) {
-            if (newStyle[i]!== null) {
-                serialStyle += i + ':' + newStyle[i] + ';';
+        for(var j in newStyle) {
+            if (newStyle[j]!== null) {
+                serialStyle += j + ':' + newStyle[j] + ';';
             }
         }
         dom.setAttribute('style', serialStyle);
-    }
+    };
+    
+    /**
+     * Add a class to a dom element
+     * @param {domElement} dom   Dom element to modify
+     * @param {string} className class to add
+     */
+    _DerbySimulator.prototype.addClass = function(dom, className) {
+        var strClass = dom.getAttribute('class');
+        var serialClass = (strClass ? strClass.split(' ') : []);
+        if (serialClass.indexOf(className)<0) {
+            serialClass.push(className);
+        }
+        dom.setAttribute('class', serialClass.join(' '));
+    };
+    
+    /**
+     * Remove a class from a dom element
+     * @param {domElement} dom   Dom element to modify
+     * @param {string} className class to remove
+     */
+    _DerbySimulator.prototype.removeClass = function(dom, className) {
+        var strClass = dom.getAttribute('class');
+        var serialClass = (strClass ? strClass.split(' ') : []);
+        if (serialClass.indexOf(className)>=0) {
+            serialClass.splice(serialClass.indexOf(className), 1);
+        }
+        dom.setAttribute('class', serialClass.join(' '));
+    };
 
 })();

@@ -36,7 +36,7 @@
             this.players.push(player);
         }
         player.setTeam(this);
-    }
+    };
 
     
     _DerbySimulator.prototype.Team = Team;
