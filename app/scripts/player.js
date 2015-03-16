@@ -45,7 +45,8 @@
         
         // repaint the player if he is out of bounds
         this.isInTrack();
-        scene.computePack();
+        scene.pack.compute();
+        this.isInEngagementZone();
     };
     
     /**
@@ -92,7 +93,8 @@
 
         this.checkCollision();
         this.isInTrack();
-        this.scene.computePack();
+        this.scene.pack.compute();
+        this.isInEngagementZone();
     };
     
     /**
@@ -207,31 +209,89 @@
     };
     
     /**
+     * Get the zone where the player is. 4 zones are defined :
+     * 1 - straight part where the jammer line is
+     * 2 - first curve
+     * 3 - straight part at the opposite of the jammer line is
+     * 4 - last curve
+     * @param   {Vector} refPoint point for which the zone must be defined otherwise, the player position
+     * @returns {int} zone 
+     */
+    Player.prototype.getZone = function(refPoint) {
+        var point = (refPoint ? refPoint : this.position);
+        if ((point.x>=-533) && (point.x<=533)) {
+                if (point.y>0) {
+                    return 2;
+                } else {
+                    return 4;
+                }
+            }
+            if (point.x<-533) {
+                return 1;
+            }
+            if (point.x>533) {
+                return 3;
+            }
+            return 0;
+    };
+    
+    /**
+     * Define if the player is in the engagement zone
+     * @returns {Boolean} true if in engagement zone
+     */
+    Player.prototype.isInEngagementZone = function() {
+        // player in the track ?
+        if (this.isInTrack()) {
+            $derby.removeClass(this.getElement(), 'out-of-play');
+            // Is there a pack ?
+            if (this.scene.pack.players === null) {
+                return false;
+            }
+            // player in the pack ?
+            if (this.scene.pack.players.indexOf(this)>=0) {
+                return true;
+            }
+            // player in front of the pack ?
+            var frontDistance = this.trackAlgebraicDistance(this.scene.pack.forward.position);
+            if ((frontDistance >=0) && (frontDistance < 600 + this.opt.ray + this.scene.pack.forward.opt.ray)) {
+                return true;
+            }
+            //player at the back of the pack ?
+            var backDistance = this.trackAlgebraicDistance(this.scene.pack.backyard.position);
+            if ((backDistance <=0) && (backDistance > -600 - this.opt.ray - this.scene.pack.backyard.opt.ray)) {
+                return true;
+            }
+        }
+        if (this.role !== 'jammer') {
+            $derby.addClass(this.getElement(), 'out-of-play');
+        }
+        return false;
+    };
+    
+    /**
      * get the distance on the track between this player and a point
      * @param   {Vector} refPoint reference point for measurment
      * @returns {float}           distance in cm
      */
     Player.prototype.trackAlgebraicDistance = function(refPoint) {
         var ray = 534;
+        var _self = this;
         var projection = function(point) {
             //The origin of the projection is the pivot line
-            if ((point.x>=-533) && (point.x<=533)) {
-                // The projection will be on the linear part
-                if (point.y>0) {
-                    return Math.PI * ray + 533 + point.x; 
-                } else {
-                    return 2 * Math.PI * ray + 3 * 533 - point.x;
-                }
-            }
-            if (point.x<-533) {
-                var alpha1 = Math.PI - (Math.atan( point.y / (point.x+533)) + Math.PI/2) % Math.PI;
-                return ray * alpha1;
-                // The projection is on the curved part, near the pivot line
-            }
-            if (point.x>533) {
-                var alpha2 = Math.PI/2 - Math.atan(point.y / (point.x-533));
-                return Math.PI * ray + 2 * 533 + ray * alpha2;
-                // The projection is on the curved part, at the oppisite of the pivot line
+            switch(_self.getZone(point)) {
+                    case 1:
+                        var alpha1 = Math.PI - (Math.atan( point.y / (point.x+533)) + Math.PI/2) % Math.PI;
+                        return ray * alpha1;
+                        // The projection is on the curved part, near the pivot line
+                    case 2:
+                        return Math.PI * ray + 533 + point.x; 
+                    case 3:
+                        var alpha2 = Math.PI/2 - Math.atan(point.y / (point.x-533));
+                        return Math.PI * ray + 2 * 533 + ray * alpha2;
+                        // The projection is on the curved part, at the oppisite of the pivot line
+                    case 4:
+                        return 2 * Math.PI * ray + 3 * 533 - point.x;
+                    default:
             }
         };
         var projectionPerimeter = 533 * 4 + 2 * Math.PI * ray;

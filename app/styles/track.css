@@ -52,6 +52,12 @@ g.player.in-track.in-pack circle {
     fill:#ffffff;
 }
 
+g.player.in-track.out-of-play circle {
+    stroke:#819FF7;
+    stroke-width: 5px;
+    fill:#ffffff;
+}
+
 .movable {
     cursor: move;
 }
