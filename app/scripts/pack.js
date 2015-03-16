@@ -44,12 +44,32 @@
             class:'pack',
             id: this.id
         });
+        
+        this.message =  new $derby.SvgElement('text', {
+            fill: '#000000',
+            style: 'font-size:100px',
+            x: 0,
+            y: 0,
+            'text-anchor':'middle',
+            class: 'noselect'
+        }, document.createTextNode('hop'));
+        
+        element.appendChild(this.message);
 
         return element;
     };
     
     /**
-     * [[Description]]
+     * Set a global message
+     * @param {String} str message to display
+     */
+    Pack.prototype.setMessage = function(str) {
+        var textNode = this.message.childNodes[0];
+        textNode.nodeValue = (str ? str : '');
+    }
+    
+    /**
+     * Draw the pack on the track
      */
     Pack.prototype.draw = function() {
         // forward player
@@ -167,6 +187,12 @@
             this.players = packPlayers;
             this.forward = forwardPlayer;
             this.backyard = backyardPlayer;
+        }
+        
+        if (this.players === null) {
+            this.setMessage('No pack !');
+        } else {
+            this.setMessage();
         }
     };
     
