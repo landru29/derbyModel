@@ -46,16 +46,20 @@ g.player.in-track circle {
     fill:#ffffff;
 }
 
-g.player.in-track.in-pack circle {
+g.player.in-track.in-pack circle.border {
     stroke:#6bea8d;
     stroke-width: 10px;
     fill:#ffffff;
 }
 
-g.player.in-track.out-of-play circle {
+g.player.in-track.out-of-play circle.border {
     stroke:#819FF7;
     stroke-width: 5px;
     fill:#ffffff;
+}
+
+g.player.in-track.out-of-play circle.mark {
+    fill-opacity:0.5;
 }
 
 .movable {
@@ -69,4 +73,28 @@ g.player.in-track.out-of-play circle {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+
+g.bulle path {
+    fill:#fbffb1;
+    fill-opacity:1;
+    stroke:#402f00;
+    stroke-width:3;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    stroke-miterlimit:4;
+    stroke-opacity:1;
+    stroke-dasharray:none;
+}
+
+g.player g.bulle {
+    display:none;
+}
+
+g.player:hover g.bulle {
+    display:block;
+}
+
+g.player:hover g.bulle text{
+    font-size:20px;
 }

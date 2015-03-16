@@ -52,7 +52,7 @@
             y: 0,
             'text-anchor':'middle',
             class: 'noselect'
-        }, document.createTextNode('hop'));
+        }, document.createTextNode(''));
         
         element.appendChild(this.message);
 
@@ -66,7 +66,7 @@
     Pack.prototype.setMessage = function(str) {
         var textNode = this.message.childNodes[0];
         textNode.nodeValue = (str ? str : '');
-    }
+    };
     
     /**
      * Draw the pack on the track
@@ -187,6 +187,7 @@
             this.players = packPlayers;
             this.forward = forwardPlayer;
             this.backyard = backyardPlayer;
+            this.length = Math.abs(backyardPlayer.trackAlgebraicDistance(forwardPlayer.position));
         }
         
         if (this.players === null) {

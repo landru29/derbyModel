@@ -130,6 +130,22 @@
         }
         return playersInside;
     };
+    
+     /**
+     * Get all the players outside the track
+     * @returns {array(Player)} list of players inside the track
+     */
+    Scene.prototype.getOutTrackPlayers = function() {
+        var playersInside = [];
+        for (var i in this.allHumans) {
+            if ((this.allHumans[i].humanType === 'player')){
+                if (!this.allHumans[i].isInTrack()) {
+                    playersInside.push(this.allHumans[i]);
+                }
+            }
+        }
+        return playersInside;
+    };
 
     
     _DerbySimulator.prototype.Scene = Scene;

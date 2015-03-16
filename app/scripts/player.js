@@ -94,7 +94,14 @@
         this.checkCollision();
         this.isInTrack();
         this.scene.pack.compute();
-        this.isInEngagementZone();
+        var inTrackPlayers = this.scene.getInTrackPlayers();
+        for (var i in inTrackPlayers) {
+            inTrackPlayers[i].isInEngagementZone();
+        }
+        var outTrackPlayers = this.scene.getOutTrackPlayers();
+        for (var i in outTrackPlayers) {
+            outTrackPlayers[i].setText(['Out of', 'bounce']);
+        }
     };
     
     /**
@@ -112,6 +119,22 @@
     };
     
     /**
+     * Set text in bulle
+     * @param {array} arrayData lines of texts to display
+     */
+    Player.prototype.setText = function(arrayData) {
+        var lines = this.txt.childNodes;
+        for (var i=0; i<3; i++) {
+            var node = lines[i].childNodes[0];
+            if (arrayData[i]) {
+                node.nodeValue = arrayData[i];
+            } else {
+                node.nodeValue = '';
+            }
+        }
+    };
+    
+    /**
      * Build the graphical element
      * @returns {DomElement} SVG element
      */
@@ -125,14 +148,31 @@
         this.border = new $derby.SvgElement('circle', {
             cx:0,
             cy:0,
-            r:this.opt.ray,
-            class:'player'
+            class: 'border',
+            r:this.opt.ray
         });
+        
+        var bulle = new $derby.SvgElement('g', {
+            class: 'bulle',
+            transform : 'scale(2,2)'
+        });
+        var frame = new $derby.SvgElement('path', {
+            d: 'M0,0 l 15,-30 l -20,0 a 10,10,90,0,1,-10,-10 l 0,-60 a 10,10,90,0,1,10, -10 l 110,0 a 10,10,90,0,1,10,10 l 0,60 a 10,10,90,0,1,-10,10 l -70,0 L 0,0 z',
+        });
+        this.txt = new $derby.SvgElement('text', {
+            x: 0
+        });
+        this.txt.appendChild(new $derby.SvgElement('tspan', {x:0, y:-90}, document.createTextNode('')));
+        this.txt.appendChild(new $derby.SvgElement('tspan', {x:0, y:-90, dy: 25}, document.createTextNode('')));
+        this.txt.appendChild(new $derby.SvgElement('tspan', {x:0, y:-90, dy: 50}, document.createTextNode('')));
+        bulle.appendChild(frame);
+        bulle.appendChild(this.txt);
         
         switch (this.role) {
                 case 'jammer':
                     this.mark = new $derby.SvgElement('polygon', {
-                        'points': '0, 25 -5.878, 8.09 -23.776, 7.725 -9.511, -3.09 -14.695, -20.225 0, -10 14.695, -20.225 9.511, -3.09 23.776, 7.725 5.878, 8.09'
+                        points: '0, 25 -5.878, 8.09 -23.776, 7.725 -9.511, -3.09 -14.695, -20.225 0, -10 14.695, -20.225 9.511, -3.09 23.776, 7.725 5.878, 8.09',
+                        class: 'mark'
                     });
                 break;
                 case 'pivot':
@@ -141,7 +181,8 @@
                         y:-8,
                         width:36,
                         height:16,
-                        style:'stroke:none'
+                        style:'stroke:none',
+                        class: 'mark'
                     });
                 break;
                 case 'blocker':
@@ -151,11 +192,13 @@
                         cx:0,
                         cy:0,
                         r:18,
-                        style:'stroke:none'
+                        style:'stroke:none',
+                        class: 'mark'
                     });
         }
         elt.appendChild(this.border);
         elt.appendChild(this.mark);
+        elt.appendChild(bulle);
         return elt;
     };
     
@@ -242,25 +285,42 @@
     Player.prototype.isInEngagementZone = function() {
         // player in the track ?
         if (this.isInTrack()) {
+            if (this.role !== 'jammer') {
+                this.setText(['Out of play']);
+            } else {
+                this.setText(['In bounce']);
+            }
             $derby.removeClass(this.getElement(), 'out-of-play');
             // Is there a pack ?
             if (this.scene.pack.players === null) {
+                this.setText(['In bounce']);
                 return false;
             }
             // player in the pack ?
             if (this.scene.pack.players.indexOf(this)>=0) {
+                this.setText(['In the pack']);
                 return true;
             }
             // player in front of the pack ?
             var frontDistance = this.trackAlgebraicDistance(this.scene.pack.forward.position);
             if ((frontDistance >=0) && (frontDistance < 600 + this.opt.ray + this.scene.pack.forward.opt.ray)) {
+                this.setText(['In the', 'engagement', 'zone']);
                 return true;
             }
             //player at the back of the pack ?
             var backDistance = this.trackAlgebraicDistance(this.scene.pack.backyard.position);
             if ((backDistance <=0) && (backDistance > -600 - this.opt.ray - this.scene.pack.backyard.opt.ray)) {
+                this.setText(['In the', 'engagement', 'zone']);
                 return true;
             }
+            if (this.role === 'jammer') {
+                var jammerPos = this.trackAlgebraicDistance(this.scene.pack.backyard.position);
+                if (jammerPos + this.scene.pack.length>0) {
+                    this.setText(['In the pack']);
+                }
+            }
+        } else {
+            this.setText(['Out of', 'bounce']);
         }
         if (this.role !== 'jammer') {
             $derby.addClass(this.getElement(), 'out-of-play');
