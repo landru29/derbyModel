@@ -54,7 +54,27 @@
             class: 'noselect'
         }, document.createTextNode(''));
         
+        this.delimiter = new $derby.SvgElement('path', {
+            d: 'M 0,0'
+        });
+        
+        var trackElement = new $derby.SvgElement('g', {
+            class: 'pack-track',
+            'fill-rule':'evenodd',
+            'clip-path':'url(#pack-' + this.id + ')'
+        });
+        
+        // Track limit
+        trackElement.appendChild(new $derby.SvgElement('path', {
+            class: 'limit',
+            d: 'M -533,-777 l 1066,-62 a 808,808,180,1,1,0,1616 l -1066,62 a 808,808,180,1,1,0,-1616 z M -533,-381 l 1066,0 a 381,381,180,1,1,0,762 l -1066,0 a 381,381,180,1,1,0,-762 z'
+        }));        
+        
         element.appendChild(this.message);
+        element.appendChild(new $derby.SvgElement('clipPath', {
+            id:'pack-' + this.id
+        }, this.delimiter));
+        element.appendChild(trackElement);
 
         return element;
     };
@@ -72,18 +92,49 @@
      * Draw the pack on the track
      */
     Pack.prototype.draw = function() {
-        // forward player
-        var startZone = this.forward.getZone();
-        switch(startZone) {
-                case 1:
-                    break;
-                case 2:
-                    break;
-                case 3:
-                    break;
-                case 4:
-                    break;
-                default:
+        if ((this.backyard) && (this.forward)) {
+
+            var getLimitLine = function(player, angle, end) {
+                var limitLine = '';
+                switch(player.getZone()) {
+                        case 1:
+                            var alpha1 = Math.PI/2 + Math.atan(player.position.y/(-533-player.position.x));
+                            limitLine1 = (-533-1500*Math.sin(alpha1)) + ',' + (-1500 * Math.cos(alpha1));
+                            limitLine2 = 'L -533,0';
+                            break;
+                        case 2:
+                            limitLine1 = player.position.x + ',1500';
+                            limitLine2 = 'L ' + player.position.x + ',0 ';
+                            break;
+                        case 3:
+                            var alpha2 = Math.PI/2 - Math.atan(player.position.y/(player.position.x-533));
+                            limitLine1 = (533+1500*Math.sin(alpha2)) + ',' + (1500 * Math.cos(alpha2));
+                            limitLine2 = 'L 533,0';
+                            break;
+                        case 4:
+                            limitLine1 = player.position.x + ',-1500';
+                            limitLine2 = 'L ' + player.position.x + ',0 ';
+                            break;
+                        default:
+                }
+                return {
+                    str: (angle ? limitLine2 + ' L ' + limitLine1 + ' A 800 800 ' + angle +' 1 1 '+end : 'M ' + limitLine1 + ' ' + limitLine2),
+                    point: limitLine1
+                };
+            };
+            
+            
+            var a1 = Math.atan(this.forward.position.y/this.forward.position.x);
+            var a2 = Math.atan(this.backyard.position.y/this.backyard.position.x);
+            var deltaA = (Math.PI-(a1-a2)) % Math.PI;
+
+            var first = getLimitLine(this.backyard);
+
+            var clipPath = first.str + ' ' + getLimitLine(this.forward, deltaA*180/Math.PI, first.point).str + ' z';
+
+            this.delimiter.setAttribute('d', clipPath);
+        } else {
+            this.delimiter.setAttribute('d', 'M 0,0');
         }
         
     };
@@ -172,6 +223,8 @@
         
         // check that there is only one group
         this.players = null;
+        this.forward = null;
+        this.backyard = null;
         if (group3mCollection.length ===1) {
             var packPlayers = group3mCollection[0];
             var backyardPlayer = null;
@@ -196,6 +249,7 @@
         } else {
             this.setMessage();
         }
+        this.draw();
     };
     
     _DerbySimulator.prototype.Pack = Pack;

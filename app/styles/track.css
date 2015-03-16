@@ -98,3 +98,8 @@ g.player:hover g.bulle {
 g.player:hover g.bulle text{
     font-size:20px;
 }
+
+g.pack g.pack-track path {
+    fill:#40ff00;
+    fill-opacity:0.3;
+}
