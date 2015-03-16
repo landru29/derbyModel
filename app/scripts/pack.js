@@ -149,6 +149,7 @@
                 if (in3mGroup(group, blockersInside[m])) {
                     // the player is near the group; take it from the list
                     group.push(blockersInside.splice(m, 1)[0]);
+                    m = blockersInside.length;
                 }
             }
             // check if there is 2 teams in the group

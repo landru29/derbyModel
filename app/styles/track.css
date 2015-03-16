@@ -58,7 +58,7 @@ g.player.in-track.out-of-play circle.border {
     fill:#ffffff;
 }
 
-g.player.in-track.out-of-play circle.mark {
+g.player.in-track.out-of-play .mark {
     fill-opacity:0.5;
 }
 

@@ -99,8 +99,8 @@
             inTrackPlayers[i].isInEngagementZone();
         }
         var outTrackPlayers = this.scene.getOutTrackPlayers();
-        for (var i in outTrackPlayers) {
-            outTrackPlayers[i].setText(['Out of', 'bounce']);
+        for (var j in outTrackPlayers) {
+            outTrackPlayers[j].setText(['Out of', 'bounce']);
         }
     };
     
