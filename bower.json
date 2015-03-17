@@ -5,7 +5,10 @@
     "Cyrille Meichel <cmeichel@free.fr>"
   ],
     "description": "Track model for Roller Derby, with players interactions",
-    "main": "roller-derby-model.min.js",
+    "main": [
+        "roller-derby-model.min.js",
+        "roller-derby-model.min.css"
+    ],
     "keywords": [
     "roller",
     "derby",
