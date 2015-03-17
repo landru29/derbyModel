@@ -84,6 +84,31 @@
 
             return delimiter;
         })(element);
+        
+        // draw the engagement zone
+        this.engagementZone = (function(container) {
+            var engagementElt = new $derby.SvgElement('g', {
+                class: 'engagement-zone',
+            });
+            var forward = new $derby.SvgElement('path', {
+                d: 'M 0,0',
+                'stroke-dasharray':'30,30',
+                class:'forward'
+            });
+            var backyard = new $derby.SvgElement('path', {
+                d: 'M 0,0',
+                'stroke-dasharray':'30,30',
+                class:'backyard'
+            });
+            container.appendChild(engagementElt);
+            engagementElt.appendChild(forward);
+            engagementElt.appendChild(backyard);
+            return {
+                forward:forward,
+                backyard:backyard
+            };
+        
+        })(element);
 
         return element;
     };
@@ -154,27 +179,39 @@
      * Draw the engagement zone
      */
     Pack.prototype.drawEngagement = function () {
-        var getLimitLine = function (point) {
-            var limitLine = '';
-            switch (player.getZone()) {
-            case 1:
-                var alpha1 = Math.PI / 2 + Math.atan(point.y / (-533 - point.x));
-                limitLine = 'M ' + (-533 - 808 * Math.sin(alpha1)) + ',' + (-808 * Math.cos(alpha1) - 31) + ' L ' + (-533 - 381 * Math.sin(alpha1)) + ',' + (-381 * Math.cos(alpha1));
-                break;
-            case 2:
-                limitLine = 'M ' + point.x + ',' + (777 - 31 * (point.x - 533) / 1066) + ' L ' + point.x + ',381 ';
-                break;
-            case 3:
-                var alpha2 = Math.PI / 2 - Math.atan(point.y / (point.x - 533));
-                limitLine = 'M ' + (533 + 808 * Math.sin(alpha2)) + ',' + (808 * Math.cos(alpha2) + 31) + ' L ' + (533 + 381 * Math.sin(alpha2)) + ',' + (381 * Math.cos(alpha2));
-                break;
-            case 4:
-                limitLine = 'M ' + point.x + ',' + (-777 - 31 * (point.x + 533) / 1066) + ' L ' + point.x + ',-381 ';
-                break;
-            default:
-            }
-            return limitLine;
-        };
+        if ((this.backyard) && (this.backyard)) {
+            var ahead = (this.forward.algebraicPosition().position + 600 + 2*this.forward.opt.ray);
+            var rear = (this.backyard.algebraicPosition().position - 600 - 2*this.backyard.opt.ray);
+
+            var getLimitLine = function (playerProto, point) {
+                console.log(point.y);
+                var limitLine = '';
+                switch (playerProto.getZone(point)) {
+                case 1:
+                    var alpha1 = Math.PI / 2 + Math.atan(point.y / (-533 - point.x));
+                    limitLine = 'M ' + (-533 - 808 * Math.sin(alpha1)) + ',' + (-808 * Math.cos(alpha1) + 31) + ' L ' + (-533 - 381 * Math.sin(alpha1)) + ',' + (-381 * Math.cos(alpha1));
+                    break;
+                case 2:
+                    limitLine = 'M ' + point.x + ',' + (777 - 31 * (point.x - 533) / 1066) + ' L ' + point.x + ',381 ';
+                    break;
+                case 3:
+                    var alpha2 = Math.PI / 2 - Math.atan(point.y / (point.x - 533));
+                    limitLine = 'M ' + (533 + 808 * Math.sin(alpha2)) + ',' + (808 * Math.cos(alpha2) - 31) + ' L ' + (533 + 381 * Math.sin(alpha2)) + ',' + (381 * Math.cos(alpha2));
+                    break;
+                case 4:
+                    limitLine = 'M ' + point.x + ',' + (-777 - 31 * (point.x + 533) / 1066) + ' L ' + point.x + ',-381 ';
+                    break;
+                default:
+                }
+                return limitLine;
+            };
+            
+            this.engagementZone.backyard.setAttribute('d', getLimitLine(this.backyard, this.backyard.algebraicToCartesian(rear)));
+            this.engagementZone.forward.setAttribute('d', getLimitLine(this.forward, this.forward.algebraicToCartesian(ahead)));
+        } else {
+            this.engagementZone.backyard.setAttribute('d', 'M 0,0');
+            this.engagementZone.forward.setAttribute('d', 'M 0,0');
+        }
     };
 
     /**

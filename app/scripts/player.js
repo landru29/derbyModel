@@ -342,40 +342,96 @@
     };
 
     /**
+     * Get one-dimention position. This is the projection of the point on a médian line in the track
+     * @param   {Object}   point [[Description]]
+     * @returns {[[Type]]} [[Description]]
+     */
+    Player.prototype.algebraicPosition = function (point) {
+        var ref = (point ? point : this.position);
+        var ray = 534;
+        var projectionPerimeter = 533 * 4 + 2 * Math.PI * ray;
+        var pos = 0;
+        //The origin of the projection is the pivot line
+        switch (this.getZone(ref)) {
+        case 1:
+            var alpha1 = Math.PI - (Math.atan(ref.y / (ref.x + 533)) + Math.PI / 2) % Math.PI;
+            pos = ray * alpha1;
+            // The projection is on the curved part, near the pivot line
+            break;
+        case 2:
+            pos = Math.PI * ray + 533 + ref.x;
+            break;
+        case 3:
+            var alpha2 = Math.PI / 2 - Math.atan(ref.y / (ref.x - 533));
+            pos = Math.PI * ray + 2 * 533 + ray * alpha2;
+            // The projection is on the curved part, at the oppisite of the pivot line
+            break;
+        case 4:
+            pos = 2 * Math.PI * ray + 3 * 533 - ref.x;
+            break;
+        default:
+        }
+        return {
+            position: pos,
+            total: projectionPerimeter
+        };
+    };
+    
+    /**
+     * Transform an algegraic position in 2D position (on the median line
+     * @param   {float} pos Algebraic position
+     * @returns {Vector}    2D position
+     */
+    Player.prototype.algebraicToCartesian = function(pos) {
+        var ray = 534;
+        var total = 533 * 4 + 2 * Math.PI * ray;
+        var position = (2*total + pos) % total;
+        
+        if ((position>0) && (position<Math.PI * ray)) {
+            return new $derby.Vector({
+                x:-533 -ray * Math.sin(position/ray),
+                y: - ray * Math.cos(position/ray)
+            });
+        }
+        
+        if ((position >= Math.PI * ray) && (position < Math.PI * ray + 1066)) {
+            return new $derby.Vector({
+                x:position - Math.PI * ray - 533,
+                y: ray
+            });
+        }
+        
+        if ((position >= Math.PI * ray + 1066) && (position < 2 * Math.PI * ray + 1066)) {
+            return new $derby.Vector({
+                x: 533 + ray * Math.sin((position - Math.PI * ray - 1066) / ray),
+                y: ray * Math.cos((position - Math.PI * ray - 1066) / ray)
+            });
+        }
+        
+        if (position >= 2 * Math.PI * ray + 1066) {
+            return new $derby.Vector({
+                x: -(position - 2 * Math.PI * ray - 1599),
+                y: - ray
+            });
+        }
+    };
+
+    /**
      * get the distance on the track between this player and a point
      * @param   {Vector} refPoint reference point for measurment
      * @returns {float}           distance in cm
      */
     Player.prototype.trackAlgebraicDistance = function (refPoint) {
-        var ray = 534;
-        var _self = this;
-        var projection = function (point) {
-            //The origin of the projection is the pivot line
-            switch (_self.getZone(point)) {
-            case 1:
-                var alpha1 = Math.PI - (Math.atan(point.y / (point.x + 533)) + Math.PI / 2) % Math.PI;
-                return ray * alpha1;
-                // The projection is on the curved part, near the pivot line
-            case 2:
-                return Math.PI * ray + 533 + point.x;
-            case 3:
-                var alpha2 = Math.PI / 2 - Math.atan(point.y / (point.x - 533));
-                return Math.PI * ray + 2 * 533 + ray * alpha2;
-                // The projection is on the curved part, at the oppisite of the pivot line
-            case 4:
-                return 2 * Math.PI * ray + 3 * 533 - point.x;
-            default:
-            }
-        };
-        var projectionPerimeter = 533 * 4 + 2 * Math.PI * ray;
 
-        var playerPosition = projection(this.position);
-        var refPosition = projection(refPoint);
+        var pos = this.algebraicPosition(this.position);
+        var playerPosition = pos.position;
+        var refPosition = this.algebraicPosition(refPoint).position;
+        var total = pos.total;
 
         var possiblePosition = {};
         possiblePosition[Math.abs(playerPosition - refPosition)] = playerPosition - refPosition;
-        possiblePosition[Math.abs(playerPosition - projectionPerimeter - refPosition) % projectionPerimeter] = (playerPosition - projectionPerimeter - refPosition) % projectionPerimeter;
-        possiblePosition[Math.abs(playerPosition + projectionPerimeter - refPosition) % projectionPerimeter] = (playerPosition + projectionPerimeter - refPosition) % projectionPerimeter;
+        possiblePosition[Math.abs(playerPosition - total - refPosition) % total] = (playerPosition - total - refPosition) % total;
+        possiblePosition[Math.abs(playerPosition + total - refPosition) % total] = (playerPosition + total - refPosition) % total;
 
         var minimumDistance = Object.keys(possiblePosition).sort(function (a, b) {
             return (parseInt(a) > parseFloat(b));
