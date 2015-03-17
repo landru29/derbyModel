@@ -1,9 +1,9 @@
 {
-    "name": "derby-model",
+    "name": "roller-derby-model",
     "version": "1.0.0",
     "repository": {
         "type": "git",
-        "url": "git://github.com/landru29/derbyModel.git"
+        "url": "git://github.com/landru29/rollerDerbyModel.git"
     },
     "description": "Generate an interactive graphical view of a roller derby track",
     "devDependencies": {
