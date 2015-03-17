@@ -1,4 +1,3 @@
-var _DerbySimulator = function() {
-};
+var _DerbySimulator = function () {};
 
 $derby = new _DerbySimulator();
