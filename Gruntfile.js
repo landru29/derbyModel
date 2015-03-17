@@ -74,6 +74,45 @@ module.exports = function (grunt) {
                 '<%= project.app%>/scripts/**/*.js',
                 'Gruntfile.js'
             ]
+        },
+        
+        cssmin: {
+            dist: {
+                files: [
+                    {
+                        dest: '<%= pkg.name%>.min.css',
+                        src: ['css/*.css']
+                    }
+                ]
+            }
+        },
+        
+        concat: { // concatenate JS files in one
+            options: {
+                // define a string to put between each file in the concatenated output
+                separator: ';'
+            },
+            dist: {
+                // the files to concatenate
+                src: [
+                    'lib/derby-simulator.js',
+                    'lib/*.js',
+                ],
+                // the location of the resulting JS file
+                dest: '<%= pkg.name %>.js'
+            }
+        },
+        
+        uglify: {
+            options: {
+                banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
+        '<%= grunt.template.today("yyyy-mm-dd") %> Cyrille MEICHEL <cmeichel@free.fr> */'
+            },
+            dist: {
+                files: {
+                    '<%= pkg.name%>.min.js': ['<%= pkg.name %>.js']
+                }
+            }
         }
     });
 
@@ -84,9 +123,12 @@ module.exports = function (grunt) {
         'watch:dev'
     ]);
 
-    grunt.registerTask('check', [
-        'jshint:dev'
+    grunt.registerTask('build', [
+        'jshint:dev',
+        'cssmin:dist',
+        'concat:dist',
+        'uglify:dist'
     ]);
 
-    grunt.registerTask('default', ['check']);
+    grunt.registerTask('default', ['build']);
 };

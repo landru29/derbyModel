@@ -1,5 +1,5 @@
 {
-    "name": "derbyModel",
+    "name": "derby-model",
     "version": "1.0.0",
     "repository": {
         "type": "git",
@@ -12,6 +12,9 @@
         "grunt-open": "~0.2.0",
         "grunt-express": "~1.2.1",
         "grunt-contrib-watch": "0.6.1",
+        "grunt-contrib-cssmin": "^0.9.0",
+        "grunt-contrib-concat": "0.5.0",
+        "grunt-contrib-uglify": "0.7.0",
         "grunt-contrib-jshint": "0.10.0"
     }
 }
