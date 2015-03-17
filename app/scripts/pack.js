@@ -94,7 +94,7 @@
     Pack.prototype.draw = function() {
         if ((this.backyard) && (this.forward)) {
 
-            var getLimitLine = function(player, angle, end) {
+            var getLimitPoly = function(player, angle, end) {
                 var limitLine = '';
                 switch(player.getZone()) {
                         case 1:
@@ -123,16 +123,39 @@
                 };
             };
             
+            /*var getLimitLine = function(player, dist) {
+                var limitLine = '';
+                switch(player.getZone()) {
+                        case 1:
+                            var alpha1 = Math.PI/2 + Math.atan(player.position.y/(-533-player.position.x));
+                            limitLine = 'M ' + (-533-808*Math.sin(alpha1)) + ',' + (-808 * Math.cos(alpha1)-31) + ' L ' + (-533-381*Math.sin(alpha1)) + ',' + (-381 * Math.cos(alpha1));
+                            break;
+                        case 2:
+                            limitLine = 'M ' + player.position.x + ',' + (777 - 31(player.position.x-533)/1066) + ' L ' + player.position.x + ',381 ';
+                            break;
+                        case 3:
+                            var alpha2 = Math.PI/2 - Math.atan(player.position.y/(player.position.x-533));
+                            limitLine = 'M ' + (533+808*Math.sin(alpha2)) + ',' + (808 * Math.cos(alpha2)+31) + ' L ' + (533+381*Math.sin(alpha2)) + ',' + (381 * Math.cos(alpha2));
+                            break;
+                        case 4:
+                            limitLine = 'M ' + player.position.x + ',' + (-777 - 31(player.position.x+533)/1066) + ' L ' + player.position.x + ',-381 ';
+                            break;
+                        default:
+                }
+                return limitLine1;
+            };*/
+            
             
             var a1 = Math.atan(this.forward.position.y/this.forward.position.x);
             var a2 = Math.atan(this.backyard.position.y/this.backyard.position.x);
             var deltaA = (Math.PI-(a1-a2)) % Math.PI;
 
-            var first = getLimitLine(this.backyard);
+            var first = getLimitPoly(this.backyard);
 
-            var clipPath = first.str + ' ' + getLimitLine(this.forward, deltaA*180/Math.PI, first.point).str + ' z';
+            var clipPath = first.str + ' ' + getLimitPoly(this.forward, deltaA*180/Math.PI, first.point).str + ' z';
 
             this.delimiter.setAttribute('d', clipPath);
+            
         } else {
             this.delimiter.setAttribute('d', 'M 0,0');
         }

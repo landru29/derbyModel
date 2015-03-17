@@ -359,12 +359,10 @@
         var playerPosition = projection(this.position);
         var refPosition = projection(refPoint);
         
-        var a = Math.abs(projectionPerimeter + refPosition - playerPosition) % projectionPerimeter;
-        var b = Math.abs(playerPosition - refPosition);
-        
         var possiblePosition = {};
         possiblePosition[Math.abs(playerPosition - refPosition)] = playerPosition - refPosition;
-        possiblePosition[Math.abs(playerPosition - projectionPerimeter - refPosition)] = playerPosition - projectionPerimeter - refPosition;
+        possiblePosition[Math.abs(playerPosition - projectionPerimeter - refPosition) % projectionPerimeter] = (playerPosition - projectionPerimeter - refPosition) % projectionPerimeter;
+        possiblePosition[Math.abs(playerPosition + projectionPerimeter - refPosition) % projectionPerimeter] = (playerPosition + projectionPerimeter - refPosition) % projectionPerimeter;
         
         var minimumDistance = Object.keys(possiblePosition).sort(function(a,b){return (parseInt(a)>parseFloat(b));});
         return possiblePosition[minimumDistance[0]];
