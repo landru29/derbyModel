@@ -315,7 +315,7 @@
             }
             if (this.role === 'jammer') {
                 var jammerPos = this.trackAlgebraicDistance(this.scene.pack.backyard.position);
-                if (jammerPos + this.scene.pack.length>0) {
+                if ((this.scene.pack.length - jammerPos>0) && (jammerPos>0)) {
                     this.setText(['In the pack']);
                 }
             }
