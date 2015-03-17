@@ -1,3 +1,7 @@
+g.player {
+    cursor:move;
+}
+
 g.track  path.limit {
     stroke:steelblue;
     stroke-width: 25px;
