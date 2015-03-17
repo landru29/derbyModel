@@ -1,12 +1,11 @@
 {
     "name": "roller-derby-model",
-    "version": "1.1.0",
     "homepage": "https://github.com/landru29/rollerDerbyModel",
     "authors": [
     "Cyrille Meichel <cmeichel@free.fr>"
   ],
     "description": "Track model for Roller Derby, with players interactions",
-    "main": "derby-model.min.js",
+    "main": "roller-derby-model.min.js",
     "keywords": [
     "roller",
     "derby",
