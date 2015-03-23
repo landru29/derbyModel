@@ -4,7 +4,8 @@
         <meta charset="utf-8">
         <title>Derby</title>
         <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.3.min.js"></script>
-        <!--<script type="text/javascript" src="../lib/derby-simulator.js"></script>
+        
+        <script type="text/javascript" src="../lib/derby-simulator.js"></script>
         <script type="text/javascript" src="../lib/scene.js"></script>
         <script type="text/javascript" src="../lib/pack.js"></script>
         <script type="text/javascript" src="../lib/track.js"></script>
@@ -14,17 +15,36 @@
         <script type="text/javascript" src="../lib/penalty-box.js"></script>
         <script type="text/javascript" src="../lib/chair.js"></script>
         <script type="text/javascript" src="../lib/vector.js"></script>
-        <script type="text/javascript" src="../lib/tools.js"></script>        
-        <link rel="stylesheet" href="../css/track.css">-->
+        <script type="text/javascript" src="../lib/tools.js"></script>
+        <script type="text/javascript" src="../lib/bezier.js"></script>
+        <script type="text/javascript" src="../lib/animation.js"></script>
+        <script type="text/javascript" src="../lib/keyframe.js"></script>
+
+        <!--<script type="text/javascript" src="../derby-model.min.js"></script>-->
+        <link rel="stylesheet" href="../roller-derby-model.min.css">
+        <!--<link rel="stylesheet" href="../css/track.css">-->
         
-        <script type="text/javascript" src="../derby-model.min.js"></script>
-        <link rel="stylesheet" href="../derby-model.min.css">
         <script>
             var movingPlayer = null;
             
             $(document).ready(function(){
                 myScene = new $derby.Scene({scale:0.3});
                 $('body').get(0).appendChild(myScene.getElement());
+                
+                //console.log($('body').get(0).innerHTML);
+                
+                var bezier = new $derby.Bezier([
+                    new $derby.Vector({x:1700, y:-200}),
+                    new $derby.Vector({x:1400, y:-600}),
+                    new $derby.Vector({x:1000, y:-800}),
+                    new $derby.Vector({x:500, y:-400}),
+                    new $derby.Vector({x:0, y:-800}),
+                    new $derby.Vector({x:-800, y:-400}),
+                    new $derby.Vector({x:-1100, y:0})
+                ]);
+
+                myScene.allHumans[0].addTrajectory(bezier.generatePoints(50));
+                myScene.globalAnimate(5000);
                 
                 var allPlayers = $('g.player');
                 allPlayers.each(function(index, element) {
