@@ -88,7 +88,7 @@
             $scope.currentPlayer = $scope.players[0];
 
             $scope.addAnimationToCurrent = function () {
-                $scope.currentPlayer.value.animations.push(new rollerDerbyModel.AnimationLinear());
+                $scope.currentPlayer.value.animations.push(new rollerDerbyModel.AnimationBezier());
             };
 
             $scope.launchAnimation = function (player, index) {

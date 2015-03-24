@@ -109,33 +109,33 @@ $derby = new _DerbySimulator();;(function () {
             });
         }
 
-        var section = indexing.section;
+        var section = parseInt(indexing.section, 10);
         var t = indexing.t;
 
         if (section === 0) {
             return new _DerbySimulator.prototype.Vector({
-                x: this.points[0].x * (1 - t) + (this.points[0].x + this.points[1].x) * t / 2,
-                y: this.points[0].y * (1 - t) + (this.points[0].y + this.points[1].y) * t / 2
+                x: this.keyFrames[0].position.x * (1 - t) + (this.keyFrames[0].position.x + this.keyFrames[1].position.x) * t / 2,
+                y: this.keyFrames[0].position.y * (1 - t) + (this.keyFrames[0].position.y + this.keyFrames[1].position.y) * t / 2
             });
         }
-        if (section === this.points.length - 1) {
+        if (section === this.keyFrames.length - 1) {
             return new _DerbySimulator.prototype.Vector({
-                x: this.points[this.points.length - 1].x * t + (this.points[this.point.length - 1].x + this.points[this.point.length - 2].x) * (1 - t) / 2,
-                y: this.points[this.points.length - 1].y * t + (this.points[this.point.length - 1].y + this.points[this.point.length - 2].y) * (1 - t) / 2
+                x: this.keyFrames[this.keyFrames.length - 1].position.x * t + (this.keyFrames[this.keyFrames.length - 1].position.x + this.keyFrames[this.keyFrames.length - 2].position.x) * (1 - t) / 2,
+                y: this.keyFrames[this.keyFrames.length - 1].position.y * t + (this.keyFrames[this.keyFrames.length - 1].position.y + this.keyFrames[this.keyFrames.length - 2].position.y) * (1 - t) / 2
             });
         }
 
         var m1 = {
-            x: (this.points[section - 1].x + this.points[section].x) / 2,
-            y: (this.points[section - 1].y + this.points[section].y) / 2
+            x: (this.keyFrames[section - 1].position.x + this.keyFrames[section].position.x) / 2,
+            y: (this.keyFrames[section - 1].position.y + this.keyFrames[section].position.y) / 2
         };
         var m2 = {
-            x: (this.points[section].x + this.points[section + 1].x) / 2,
-            y: (this.points[section].y + this.points[section + 1].y) / 2
+            x: (this.keyFrames[section].position.x + this.keyFrames[section + 1].position.x) / 2,
+            y: (this.keyFrames[section].position.y + this.keyFrames[section + 1].position.y) / 2
         };
         var sommet = {
-            x: this.points[section].x,
-            y: this.points[section].y
+            x: this.keyFrames[section].position.x,
+            y: this.keyFrames[section].position.y
         };
 
         return new _DerbySimulator.prototype.Vector({
@@ -172,26 +172,39 @@ $derby = new _DerbySimulator();;(function () {
      * @returns {Vector} Interpolated point
      */
     AnimationBezier.prototype.interpolatePoint = function (milliseconds) {
-        var step = (function (keyframes, time) {
-            var duration = 0;
-            for (var i in keyframes) {
-                duration += keyframes[i].milliseconds;
-                if (duration > time) {
-                    return i;
+        var section = (function (keyframes, time) {
+            var duration = keyframes[0].milliseconds;
+            for (var i=1; i<keyframes.length; i+=0.5) {
+                duration += keyframes[Math.floor(i)].milliseconds * 0.5;
+                if (milliseconds < duration) {
+                    return Math.round(i-1);
                 }
-                return keyframes.length - 1;
             }
+            return keyframes.length - 1;
         })(this.keyFrames, milliseconds);
         
-        var originTime = 0;
-        for (var i=0; i<step;i++) {
-            originTime += this.keyFrames[i].milliseconds;
-        }
+        var originTime = (function(keyframes, sect) {
+            if (sect === 0) {
+                return keyframes[0].milliseconds
+            }
+            var origin = 0;
+            for (var i=0; i<sect;i++) {
+                origin += keyframes[i].milliseconds;
+            }
+            origin += keyframes[sect].milliseconds/2;
+            return origin;
+        })(this.keyFrames, section);
         
-        var fragment = (milliseconds - originTime) / this.keyFrames[step].milliseconds;
+        var duration = (function(keyframe, sect){
+            if ((sect === 0) || (sect === keyframe.length-1)) {
+                return keyframe[sect].milliseconds/2;
+            }
+            return (keyframe[sect].milliseconds + keyframe[sect+1].milliseconds)/2;
+        })(this.keyFrames, section);
+
         return this.getPoint({
-            section:step,
-            t: fragment
+            section:section,
+            t: (milliseconds - originTime) / duration
         });
     };
 
@@ -204,68 +217,6 @@ $derby = new _DerbySimulator();;(function () {
     AnimationBezier.prototype.generatePoints = function (milliseconds) {
         return this.modelClass.generatePoints.call(this, milliseconds);
     };
-
-    /**
-     * List points on the spline, equally spaced
-     * @param   {Integer} amount number of points
-     * @returns {Array(Vector)} List of points
-     */
-    /*AnimationBezier.prototype.generatePoints = function(amount) {
-        if (amount<2) {
-            amount = 2;
-        }
-        var accuracy = 20 * amount;
-        var step = this.getLength(accuracy)/(amount-2);
-        var currentPoint = this.getPoint({index:0, accuracy:accuracy});
-        var result = [currentPoint];
-        var totalLength=0;
-        for (var index=0; index<this.size() * accuracy; index++) {
-            var point = this.getPoint({index:index, accuracy:accuracy});
-            totalLength += currentPoint.distance(point);
-            if (totalLength> result.length * step) {
-                result.push(currentPoint);
-            }
-            currentPoint = point;
-        }
-        result.push(this.getPoint({section:this.size()-1, t:1}));
-        return result;
-    };*/
-
-    /**
-     * Generate the SVG string path
-     * @param   {Integer} amount number of points
-     * @returns {String} SVG string path
-     */
-    /*AnimationBezier.prototype.svgPath = function(amount) {
-        var points = this.generatePoints(amount);
-        var result = 'M ' + points[0].x + ',' + points[0].y;
-        for (var i=1; i<points.length; i++) {
-            result += ' L ' + points[i].x + ',' + points[i].y;
-        }
-        return result;
-    };*/
-
-    /**
-     * Define animation through the spline
-     * @param {integer}  milliseconds Duration of the animation
-     * @param {Integer}  steps        Number of steps
-     * @param {Function} callback     Function to be invoked with parameter Vector
-     * @param {Object}   obj          Object on which to work
-     */
-    /*AnimationBezier.prototype.follow = function(milliseconds, steps, callback) {
-        var animation = {
-            points: this.generatePoints(steps),
-            current: -1
-        };
-        animation.control = window.setInterval(function() {
-            animation.current++;
-            if (animation.current>= animation.points) {
-                window.clearInterval(animation.control);
-            } else {
-                callback(animation.points[animation.current]);
-            }
-        }, milliseconds/steps);
-    };*/
 
 
     _DerbySimulator.prototype.AnimationBezier = AnimationBezier;
