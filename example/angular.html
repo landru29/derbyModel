@@ -6,7 +6,7 @@
     <title>Derby</title>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
 
-    <script type="text/javascript" src="../lib/angular.js"></script>
+    <!--<script type="text/javascript" src="../lib/angular.js"></script>
 
     <script type="text/javascript" src="../lib/derby-simulator.js"></script>
     <script type="text/javascript" src="../lib/scene.js"></script>
@@ -22,59 +22,18 @@
     <script type="text/javascript" src="../lib/animation.js"></script>
     <script type="text/javascript" src="../lib/animation-bezier.js"></script>
     <script type="text/javascript" src="../lib/animation-linear.js"></script>
-    <script type="text/javascript" src="../lib/keyframe.js"></script>
+    <script type="text/javascript" src="../lib/keyframe.js"></script>-->
 
     <!--<link rel="stylesheet" href="../css/track.css">-->
 
-    <!--<script type="text/javascript" src="../roller-derby-model.min.js"></script>-->
+    <script type="text/javascript" src="../roller-derby-model.min.js"></script>
     <link rel="stylesheet" href="../roller-derby-model.min.css">
-
-    <style>
-        .keyframe {
-            cursor: pointer;
-        }
-        
-        .keyframe rect {
-            stroke: red;
-            stroke-width: 10px;
-            fill: white;
-        }
-        
-        .keyframe:hover line {
-            stroke: red;
-            stroke-width: 10px;
-        }
-        
-        .keyframe:hover text {
-            display: none;
-        }
-    </style>
 
     <script>
         angular.module('derbyApp', ['roller-derby']);
         angular.module('derbyApp').controller('ctrl', ['$scope', 'rollerDerbyModel', function ($scope, rollerDerbyModel) {
             $scope.scene = new rollerDerbyModel.Scene({
                 scale: 0.3
-            });
-
-            $scope.movingCross = null;
-
-            angular.element($scope.scene.getElement()).bind('mouseup', function () {
-                $scope.movingCross = null;
-            });
-
-            angular.element($scope.scene.getElement()).bind('mousemove', function (event) {
-                if ($scope.movingCross === null) return;
-                var x = (event.clientX - $scope.movingCross.clientX) / $scope.scene.opt.scale;
-                var y = (event.clientY - $scope.movingCross.clientY) / $scope.scene.opt.scale;
-
-                $scope.movingCross.data.position.x += x;
-                $scope.movingCross.data.position.y += y;
-                $scope.movingCross.data.position.data.setAttribute('transform', 'translate(' + $scope.movingCross.data.position.x + ', ' + $scope.movingCross.data.position.y + ')');
-
-                $scope.movingCross.clientX = event.clientX;
-                $scope.movingCross.clientY = event.clientY;
-
             });
 
             $scope.players = [];
@@ -92,59 +51,34 @@
             };
 
             $scope.launchAnimation = function (player, index) {
-                $scope.hideAllKeyframes();
-                player.selectAnimation(index);
-                player.lauchAnimation(function () {
-                    $scope.showKeyFrames();
-                });
+                $scope.scene.api.launchAnimation(player, index);
             };
 
             $scope.launchAllAnimation = function () {
-                $scope.hideAllKeyframes();
-                $scope.scene.launchAnimation(function () {
-                    $scope.showKeyFrames();
-                });
+                $scope.scene.api.launchAllAnimation();
             };
 
             $scope.showKeyFrames = function () {
                 if ($scope.currentPlayer.value.animations.length) {
-                    var keyframes = $scope.currentPlayer.value.animations[0].keyFrames;
-                    for (var i in keyframes) {
-                        rollerDerbyModel.addStyle(keyframes[i].position.data, {
-                            display: null
-                        });
-                    }
+                    $scope.scene.api.showKeyFrames($scope.currentPlayer.value.animations[0]);
                 }
             };
 
             $scope.hideAllKeyframes = function () {
-                var keyframes = rollerDerbyModel.Keyframe.prototype.all;
-                for (var i in keyframes) {
-                    rollerDerbyModel.addStyle(keyframes[i].position.data, {
-                        display: 'none'
-                    });
-                }
+                $scope.scene.api.hideAllKeyframes();
             };
 
+            $scope.exportTeams = function () {
+                var theTeams = [];
+                for (var i in $scope.scene.teams) {
+                    theTeams.push($scope.scene.teams[i].stringify());
+                }
+                console.log('{"teams":[' + theTeams.join(',') + ']}');
+            };
+            
             $scope.addKeyframe = function (animation) {
-                var point = new rollerDerbyModel.Vector({
-                    x: 0,
-                    y: 0
-                });
-                var cross = new rollerDerbyModel.svgCross(point, 'keyframe', 60, animation.keyFrames.length + 1);
-                point.data = cross;
-                $scope.scene.addElement(cross);
-
-                var keyFrame = animation.addKeyFrame(point, 1000);
-
-                angular.element(cross).bind('mousedown', function (event) {
-                    $scope.movingCross = {
-                        data: keyFrame,
-                        clientX: event.clientX,
-                        clientY: event.clientY
-                    };
-                });
-            }
+                $scope.scene.api.addKeyframe(animation);
+            };
 
             $scope.$watch('currentPlayer', function (newVal, oldVal) {
                 $scope.hideAllKeyframes();
@@ -159,10 +93,11 @@
 <body ng-app="derbyApp">
     <h1>Roller Derby Track</h1>
     <div ng-controller="ctrl">
-        <div roller-derby-game="scene" interactive="true" style="display:inline-block"></div>
+        <div roller-derby-game="scene" interactive="true" edit="true" style="display:inline-block"></div>
         <div style="display:inline-block;vertical-align:top">
             <h2>Control</h2>
             <span style="cursor:pointer;background:#88dd88;padding:2px;margin:5px;display:block" ng-click="launchAllAnimation()">Test all</span>
+            <span style="cursor:pointer;background:#88dd88;padding:2px;margin:5px;display:block" ng-click="exportTeams()">Export</span>
             <select ng-model="currentPlayer" ng-options="opt as opt.label for opt in players">
             </select>
             <div>
