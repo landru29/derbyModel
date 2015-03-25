@@ -1784,7 +1784,7 @@ $derby = new _DerbySimulator();;(function () {
      * @param {Object} animationData Animations to load
      * @param {Object} options       Options to pass
      */
-    Player.loadAnimation = function (animationData, options) {
+    Player.prototype.loadAnimation = function (animationData, options) {
         var opt = _DerbySimulator.prototype.extend({
                 marker: false
             },
