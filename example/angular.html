@@ -104,7 +104,7 @@
                 <div ng-repeat="animation in currentPlayer.value.animations" style="border:solid 1px gray">
                     <div>Animation {{$index+1}}</div>
                     <div ng-repeat="keyframe in animation.keyFrames" style="border:solid 1px blue; margin:5px;padding:5px">
-                        <div>Keyframe {{$index+1}}</div>
+                        <div>Keyframe {{keyframe.name}} <span style="cursor:pointer" ng-click="animation.removeKeyframe(keyframe)">X</span></div>
                         <input ng-model="keyframe.milliseconds" type="number" placeholder="duration"></input>
                     </div>
                     <span style="cursor:pointer;background:#88dd88;padding:2px;margin:5px;display:block" ng-click="addKeyframe(animation)">Add Keyframe</span>

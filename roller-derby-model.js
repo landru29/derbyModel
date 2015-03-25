@@ -125,8 +125,7 @@ $derby = new _DerbySimulator();;(function () {
                             });
 
                             var keyFrame = animation.addKeyFrame({
-                                position: point,
-                                milliseconds: 1000
+                                position: point
                             });
 
                             angular.element(keyFrame.getElement()).bind('mousedown', function (event) {
@@ -184,6 +183,21 @@ $derby = new _DerbySimulator();;(function () {
      */
     AnimationBezier.prototype.getDuration = function () {
         return this.modelClass.getDuration.call(this);
+    };
+    
+    /**
+     * Remove a keyframe
+     * @param {Keyframe} kf keyframe to remove
+     */
+    AnimationBezier.prototype.removeKeyframe = function(kf) {
+        return this.modelClass.removeKeyframe.call(this, kf);
+    };
+    
+    /**
+     * Clean the object
+     */
+    AnimationBezier.prototype.destroy = function() {
+        return this.modelClass.destroy.call(this);
     };
 
     /**
@@ -354,6 +368,21 @@ $derby = new _DerbySimulator();;(function () {
     AnimationLinear.prototype.getDuration = function () {
         return this.modelClass.getDuration.call(this);
     };
+    
+    /**
+     * Remove a keyframe
+     * @param {Keyframe} kf keyframe to remove
+     */
+    AnimationLinear.prototype.removeKeyframe = function(kf) {
+        return this.modelClass.removeKeyframe.call(this, kf);
+    };
+    
+    /**
+     * Clean the object
+     */
+    AnimationLinear.prototype.destroy = function() {
+        return this.modelClass.destroy.call(this);
+    };
 
     /**
      * Interpolate points between two keyframes
@@ -432,14 +461,39 @@ $derby = new _DerbySimulator();;(function () {
      * @param   {Integer]} milliseconds Time from the origin
      */
     Animation.prototype.addKeyFrame = function (data) {
-        var keyFrame = new _DerbySimulator.prototype.Keyframe(this, {
-            marker: this.opt.marker || data.marker,
-            position: data.position,
-            milliseconds: data.milliseconds
-        });
+        var myData = _DerbySimulator.prototype.extend({
+                marker: this.opt.marker,
+            },
+            data
+        );
+        
+        var keyFrame = new _DerbySimulator.prototype.Keyframe(this, myData);
         this.keyFrames.push(keyFrame);
         //this.sort();
         return keyFrame;
+    };
+    
+    /**
+     * Remove a keyframe
+     * @param {Keyframe} kf keyframe to remove
+     */
+    Animation.prototype.removeKeyframe = function(kf) {
+        var index = this.keyFrames.indexOf(kf);
+        if (index>-1) {
+            this.keyFrames.splice(index, 1);
+            kf.destroy();
+        }
+    };
+    
+    /**
+     * Clean the object
+     */
+    Animation.prototype.destroy = function() {
+        for (var i in this.keyFrames) {
+            this.keyFrames[i].destroy();
+        }
+        this.keyFrames = [];
+        this.scene.unregisterObject(this);
     };
 
     /**
@@ -672,6 +726,11 @@ $derby = new _DerbySimulator();;(function () {
     var Keyframe = function (animation, options) {
         // generate id
         this.id = _DerbySimulator.prototype.getUUID();
+        
+        // parent root
+        this.animation = animation;
+        this.scene = animation.scene;
+        this.scene.registerObject(this);
 
         // default options
         this.opt = _DerbySimulator.prototype.extend({
@@ -680,15 +739,12 @@ $derby = new _DerbySimulator();;(function () {
                     x: 0,
                     y: 0
                 },
-                milliseconds: 1000
+                milliseconds: (this.animation.keyFrames.length === 0 ? 0 : 1000)
             },
             options
         );
 
-        // parent root
-        this.animation = animation;
-        this.scene = animation.scene;
-        this.scene.registerObject(this);
+        
 
         this.position = new _DerbySimulator.prototype.Vector(this.opt.position);
         this.milliseconds = this.opt.milliseconds;
@@ -698,10 +754,13 @@ $derby = new _DerbySimulator();;(function () {
         }
         Keyframe.prototype.all.push(this);
         
+        this.name = this.animation.keyFrames.length+1;
+        
         if (this.opt.marker) {
             this.element = this.buildElement();
             this.scene.addElement(this.element);
         }
+        
     };
     
      /**
@@ -709,8 +768,19 @@ $derby = new _DerbySimulator();;(function () {
      * @returns {DomElement} SVG element
      */
     Keyframe.prototype.buildElement = function () {
-        var elt = new _DerbySimulator.prototype.svgCross(this.position, 'keyframe', 60, this.animation.keyFrames.length+1);
+        var elt = new _DerbySimulator.prototype.svgCross(this.position, 'keyframe', 60, this.name);
         return elt;
+    };
+    
+    /**
+     * Clean the object
+     */
+    Keyframe.prototype.destroy = function() {
+        this.scene.unregisterObject(this);
+        var elt = this.getElement();
+        if (elt) {
+            elt.parentElement.removeChild(elt);
+        }
     };
     
     /**
@@ -1809,6 +1879,15 @@ $derby = new _DerbySimulator();;(function () {
         this.animations.push(animation);
     };
 
+    /**
+     * Trash all animations
+     */
+    Player.prototype.cleanAnimations = function() {
+        for (var i in this.animations) {
+            this.animations[i].destroy();
+        }
+        this.animations = [];
+    }
 
     _DerbySimulator.prototype.Player = Player;
 })();;(function () {
@@ -1888,6 +1967,16 @@ $derby = new _DerbySimulator();;(function () {
      */
     Scene.prototype.registerObject = function (obj) {
         this.allObjects[obj.id] = obj;
+    };
+    
+    /**
+     * unregister an object
+     * @param {object} obj object to register
+     */
+    Scene.prototype.unregisterObject = function (obj) {
+        if (this.allObjects[obj.id]) {
+            delete this.allObjects[obj.id];
+        }
     };
 
     /**
