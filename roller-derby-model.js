@@ -68,9 +68,12 @@ $derby = new _DerbySimulator();;(function () {
                         hideAllKeyframes: function () {
                             var keyframes = rollerDerbyModel.Keyframe.prototype.all;
                             for (var i in keyframes) {
-                                rollerDerbyModel.addStyle(keyframes[i].getElement(), {
-                                    display: 'none'
-                                });
+                                var elt = keyframes[i].getElement();
+                                if (elt) {
+                                    rollerDerbyModel.addStyle(elt, {
+                                        display: 'none'
+                                    });
+                                }
                             }
                         },
                         toggleKeyframeShadow: function (state) {
@@ -158,6 +161,7 @@ $derby = new _DerbySimulator();;(function () {
         this.keyFrames = [];
         
         this.type='bezier';
+        this.objectName = 'animation';
     };
 
     /**
@@ -342,6 +346,7 @@ $derby = new _DerbySimulator();;(function () {
         this.keyFrames = [];
         
         this.type='linear';
+        this.objectName = 'animation';
     };
 
     /**
@@ -444,7 +449,6 @@ $derby = new _DerbySimulator();;(function () {
 
         // default options
         this.opt = _DerbySimulator.prototype.extend({
-                marker: false,
             },
             options
         );
@@ -453,6 +457,7 @@ $derby = new _DerbySimulator();;(function () {
         this.id = _DerbySimulator.prototype.getUUID();
 
         this.keyFrames = [];
+        this.objectName = 'animation';
     };
 
     /**
@@ -461,13 +466,7 @@ $derby = new _DerbySimulator();;(function () {
      * @param   {Integer]} milliseconds Time from the origin
      */
     Animation.prototype.addKeyFrame = function (data) {
-        var myData = _DerbySimulator.prototype.extend({
-                marker: this.opt.marker,
-            },
-            data
-        );
-        
-        var keyFrame = new _DerbySimulator.prototype.Keyframe(this, myData);
+        var keyFrame = new _DerbySimulator.prototype.Keyframe(this, data);
         this.keyFrames.push(keyFrame);
         //this.sort();
         return keyFrame;
@@ -558,6 +557,7 @@ $derby = new _DerbySimulator();;(function () {
     var Bench = function (scene, options) {
         // generate id
         this.id = _DerbySimulator.prototype.getUUID();
+        this.objectName = 'bench';
 
         // parent root
         this.scene = scene;
@@ -686,6 +686,7 @@ $derby = new _DerbySimulator();;(function () {
     var Chair = function (position) {
         // generate id
         this.id = _DerbySimulator.prototype.getUUID();
+        this.objectName = 'chair';
         
         this.position = position;
         this.player = null;
@@ -726,6 +727,7 @@ $derby = new _DerbySimulator();;(function () {
     var Keyframe = function (animation, options) {
         // generate id
         this.id = _DerbySimulator.prototype.getUUID();
+        this.objectName = 'keyframe';
         
         // parent root
         this.animation = animation;
@@ -734,7 +736,6 @@ $derby = new _DerbySimulator();;(function () {
 
         // default options
         this.opt = _DerbySimulator.prototype.extend({
-                marker: false,
                 position: {
                     x: 0,
                     y: 0
@@ -756,10 +757,8 @@ $derby = new _DerbySimulator();;(function () {
         
         this.name = this.animation.keyFrames.length+1;
         
-        if (this.opt.marker) {
-            this.element = this.buildElement();
-            this.scene.addElement(this.element);
-        }
+        this.element = this.buildElement();
+        this.scene.addElement(this.element);
         
     };
     
@@ -769,6 +768,9 @@ $derby = new _DerbySimulator();;(function () {
      */
     Keyframe.prototype.buildElement = function () {
         var elt = new _DerbySimulator.prototype.svgCross(this.position, 'keyframe', 60, this.name);
+        if (!this.scene.editMode) {
+            _DerbySimulator.prototype.addClass(elt, 'production');
+        }
         return elt;
     };
     
@@ -838,6 +840,7 @@ $derby = new _DerbySimulator();;(function () {
     var Pack = function (scene, options) {
         // generate id
         this.id = _DerbySimulator.prototype.getUUID();
+        this.objectName = 'pack';
 
         // parent root
         this.scene = scene;
@@ -1175,6 +1178,7 @@ $derby = new _DerbySimulator();;(function () {
     var PenaltyBox = function (scene, options) {
         // generate id
         this.id = _DerbySimulator.prototype.getUUID();
+        this.objectName = 'penalty-box';
 
         // parent root
         this.scene = scene;
@@ -1285,6 +1289,7 @@ $derby = new _DerbySimulator();;(function () {
     var Player = function (scene, options) {
         // generate id
         this.id = _DerbySimulator.prototype.getUUID();
+        this.objectName = 'player';
 
         if ('undefined' === typeof Player.prototype.all) {
             Player.prototype.all = [];
@@ -1488,7 +1493,7 @@ $derby = new _DerbySimulator();;(function () {
                 animation.currentKeyFrame++;
                 if (animation.currentKeyFrame >= animation.maxKeyFrame) {
                     window.clearInterval(animation.handler);
-                    console.log('End of animation   ' + animation.id);
+                    //console.log('End of animation   ' + animation.id);
                     _self.animationControl.done = true;
                     if (opt.resetAtTheEnd) {
                         _self.setPosition(originalPosition);
@@ -1855,22 +1860,14 @@ $derby = new _DerbySimulator();;(function () {
      * @param {Object} options       Options to pass
      */
     Player.prototype.loadAnimation = function (animationData, options) {
-        var opt = _DerbySimulator.prototype.extend({
-                marker: false
-            },
-            options);
         var animation = null;
-        this.animations = [];
+        this.cleanAnimations();
         switch (animationData.type) {
         case 'bezier':
-            animation = new _DerbySimulator.prototype.AnimationBezier(this.scene, {
-                marker: opt.marker
-            });
+            animation = new _DerbySimulator.prototype.AnimationBezier(this.scene, options);
             break;
         default:
-            animation = new _DerbySimulator.prototype.AnimationLinear(this.scene, {
-                marker: opt.marker
-            });
+            animation = new _DerbySimulator.prototype.AnimationLinear(this.scene, options);
             break;
         }
         for (var i in animationData.keyframes) {
@@ -1901,16 +1898,20 @@ $derby = new _DerbySimulator();;(function () {
 
         // generate id
         this.id = _DerbySimulator.prototype.getUUID();
+        this.objectName = 'scene';
 
         this.opt = _DerbySimulator.prototype.extend({
                 size: {
                     width: 3250,
                     height: 2000
                 },
-                scale: 1
+                scale: 1,
+                edit:false
             },
             options
         );
+        
+        this.editMode = this.opt.edit;
 
         // scale the global bounds
         this.opt.size.width *= this.opt.scale;
@@ -1952,6 +1953,19 @@ $derby = new _DerbySimulator();;(function () {
         };
 
     };
+    
+    Scene.prototype.setEditMode = function(state) {
+        this.editMode = state;
+        var allKeyframes = this.getObjectByType('keyframe');
+        for (var i in allKeyframes) {
+            var elt = allKeyframes[i].getElement();
+            if (state) {
+                _DerbySimulator.prototype.removeClass(elt, 'production');
+            } else {
+                _DerbySimulator.prototype.addClass(elt, 'production');
+            }
+        }
+    };
 
     /**
      * Add SVG element in the scaled area
@@ -1967,6 +1981,21 @@ $derby = new _DerbySimulator();;(function () {
      */
     Scene.prototype.registerObject = function (obj) {
         this.allObjects[obj.id] = obj;
+    };
+    
+    /**
+     * Get objects by type
+     * @param   {String} typeName type to filer
+     * @returns {Array} list of filtered objects
+     */
+    Scene.prototype.getObjectByType = function(typeName) {
+        var result = [];
+        for (var i in this.allObjects) {
+            if (this.allObjects[i].objectName === typeName) {
+                result.push(this.allObjects[i]);
+            }
+        }
+        return result;
     };
     
     /**
@@ -2089,7 +2118,7 @@ $derby = new _DerbySimulator();;(function () {
      */
     Scene.prototype.launchAnimation = function (index, callback) {
         this.animationControl.done = false;
-        console.log('Starting animation ' + this.animationControl.id);
+        //console.log('Starting animation ' + this.animationControl.id);
         var _self = this;
         for (var i in this.allHumans) {
             this.allHumans[i].selectAnimation(index);
@@ -2123,6 +2152,7 @@ $derby = new _DerbySimulator();;(function () {
     var Team = function (scene, name, color, position, bench) {
         // generate id
         this.id = _DerbySimulator.prototype.getUUID();
+        this.objectName = 'team';
 
         // parent root
         this.scene = scene;
@@ -2352,6 +2382,7 @@ $derby = new _DerbySimulator();;(function () {
     var Track = function (scene, options) {
         // generate id
         this.id = _DerbySimulator.prototype.getUUID();
+        this.objectName = 'track';
 
         // parent root
         this.scene = scene;
@@ -2468,6 +2499,10 @@ $derby = new _DerbySimulator();;(function () {
      * @param {Object} data (x,y) object
      */
     var Vector = function (data) {
+        // generate id
+        this.id = _DerbySimulator.prototype.getUUID();
+        this.objectName = 'track';
+        
         this.x = (data.x ? data.x : 0);
         this.y = (data.y ? data.y : 0);
         // embeded data
