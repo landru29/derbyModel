@@ -1,6 +1,7 @@
 {
     "name": "roller-derby-model",
     "homepage": "https://github.com/landru29/rollerDerbyModel",
+    "version":"1.2.5",
     "authors": [
     "Cyrille Meichel <cmeichel@free.fr>"
   ],
