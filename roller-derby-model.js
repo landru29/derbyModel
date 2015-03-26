@@ -1934,10 +1934,11 @@ $derby = new _DerbySimulator();;(function () {
 
         this.editMode = this.opt.edit;
         this.interactive = this.opt.interactive;
+        this.scale = this.opt.scale;
 
         // scale the global bounds
-        this.opt.size.width *= this.opt.scale;
-        this.opt.size.height *= this.opt.scale;
+        this.opt.size.width *= this.scale;
+        this.opt.size.height *= this.scale;
 
         // Build graphical element
         this.element = this.buildElement();
@@ -1991,6 +1992,20 @@ $derby = new _DerbySimulator();;(function () {
             }
         }
     };
+    
+    /**
+     * Set the scale of the scene
+     * @param {float} scale Scale value
+     */
+    Scene.prototype.setScale = function(scale) {
+        this.opt.size.width =  scale * this.opt.size.width / this.scale;
+        this.opt.size.height = scale * this.opt.size.height / this.scale;
+        this.scale = scale;
+        var elt = this.getElement();
+        elt.setAttribute('width', this.opt.size.width);
+        elt.setAttribute('height', this.opt.size.height);
+        this.container.setAttribute('transform', 'matrix(' + this.scale + ' 0 0 ' + this.scale + ' ' + (1500 * this.scale) + ' ' + (1000 * this.scale) + ')');
+    };
 
     /**
      * Set the element to move
@@ -2033,8 +2048,8 @@ $derby = new _DerbySimulator();;(function () {
         this.element.addEventListener('mousemove', function (event) {
             if (_self.interaction.movingElement) {
                 var increment = new _DerbySimulator.prototype.Vector({
-                    x: (event.clientX - _self.interaction.movingElement.clientX) / _self.opt.scale,
-                    y: (event.clientY - _self.interaction.movingElement.clientY) / _self.opt.scale
+                    x: (event.clientX - _self.interaction.movingElement.clientX) / _self.scale,
+                    y: (event.clientY - _self.interaction.movingElement.clientY) / _self.scale
                 });
                 _self.interaction.movingElement.obj.setPosition(null, increment);
                 _self.interaction.movingElement.clientX = event.clientX;
@@ -2121,7 +2136,7 @@ $derby = new _DerbySimulator();;(function () {
         elt.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
 
         this.container = new _DerbySimulator.prototype.SvgElement('g', {
-            transform: 'matrix(' + this.opt.scale + ' 0 0 ' + this.opt.scale + ' ' + (1500 * this.opt.scale) + ' ' + (1000 * this.opt.scale) + ')'
+            transform: 'matrix(' + this.scale + ' 0 0 ' + this.scale + ' ' + (1500 * this.scale) + ' ' + (1000 * this.scale) + ')'
         });
 
         var title = document.createElement('title');
