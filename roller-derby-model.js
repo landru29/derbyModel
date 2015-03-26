@@ -25,43 +25,10 @@ $derby = new _DerbySimulator();;(function () {
 
                 link: function (scope, element, attrs) {
                     element[0].appendChild(scope.rollerDerbyGame.getElement());
-                    
+
                     var movingElement = null;
 
-                    /** INTERACTIVE **/
-                    if (scope.interactive) {
-                        
-                        var allPlayers = scope.rollerDerbyGame.allHumans;
-                        for (var i in allPlayers) {
-                            (function (player) {
-                                angular.element(player.getElement()).bind('mousedown', function (event) {
-                                    movingElement = {
-                                        element: player,
-                                        clientX: event.clientX,
-                                        clientY: event.clientY
-                                    };
-                                });
-                            })(allPlayers[i]);
-                        }
-
-                        angular.element(element).bind('mousemove', function (event) {
-                            if (movingElement === null) return;
-                            movingElement.element.setPosition(null, new $derby.Vector({
-                                x: (event.clientX - movingElement.clientX) / scope.rollerDerbyGame.opt.scale,
-                                y: (event.clientY - movingElement.clientY) / scope.rollerDerbyGame.opt.scale
-                            }));
-                            movingElement.clientX = event.clientX;
-                            movingElement.clientY = event.clientY;
-
-                        });
-
-                        angular.element(element).bind('mouseup', function () {
-                            movingElement = null;
-                        });
-                    }
-                    /** INTERACTIVE **/
-
-
+                    scope.rollerDerbyGame.setInteractive(scope.interactive);
 
                     /** API **/
                     scope.rollerDerbyGame.api = {
@@ -126,38 +93,19 @@ $derby = new _DerbySimulator();;(function () {
                                     scope.rollerDerbyGame.api.toggleKeyframeShadow(false);
                                 }
                             });
+                        },
+                        addKeyframe: function (animation) {
+                            var keyFrame = animation.addKeyFrame({
+                                position: new rollerDerbyModel.Vector({
+                                    x: 0,
+                                    y: 0
+                                })
+                            });
+
                         }
 
                     };
                     /** API **/
-
-
-                    /** ANIMATION EDITOR **/
-                    if (scope.edit) {
-
-                        scope.rollerDerbyGame.api.addKeyframe = function (animation) {
-                            var point = new rollerDerbyModel.Vector({
-                                x: 0,
-                                y: 0
-                            });
-
-                            var keyFrame = animation.addKeyFrame({
-                                position: point
-                            });
-
-                            angular.element(keyFrame.getElement()).bind('mousedown', function (event) {
-                                if (keyFrame.lock) {
-                                    return;
-                                }
-                                movingElement = {
-                                    element: keyFrame,
-                                    clientX: event.clientX,
-                                    clientY: event.clientY
-                                };
-                            });
-                        };
-                    }
-                    /** ANIMATION EDITOR **/
 
 
                 }
@@ -772,6 +720,9 @@ $derby = new _DerbySimulator();;(function () {
         this.element = this.buildElement();
         this.scene.addElement(this.element);
         
+        // make it draggable
+        this.scene.registerMovingElement(this);
+        
     };
     
      /**
@@ -1378,6 +1329,9 @@ $derby = new _DerbySimulator();;(function () {
         this.isInTrack();
         scene.pack.compute();
         this.isInEngagementZone();
+        
+        // make it draggable
+        this.scene.registerMovingElement(this);
 
     };
 
@@ -1972,12 +1926,14 @@ $derby = new _DerbySimulator();;(function () {
                     height: 2000
                 },
                 scale: 1,
-                edit:false
+                edit: false,
+                interactive: true
             },
             options
         );
-        
+
         this.editMode = this.opt.edit;
+        this.interactive = this.opt.interactive;
 
         // scale the global bounds
         this.opt.size.width *= this.opt.scale;
@@ -1985,6 +1941,9 @@ $derby = new _DerbySimulator();;(function () {
 
         // Build graphical element
         this.element = this.buildElement();
+        
+        // mouse drag
+        this.launchInteraction();
 
         // create the track
         this.track = new _DerbySimulator.prototype.Track(this);
@@ -2019,8 +1978,8 @@ $derby = new _DerbySimulator();;(function () {
         };
 
     };
-    
-    Scene.prototype.setEditMode = function(state) {
+
+    Scene.prototype.setEditMode = function (state) {
         this.editMode = state;
         var allKeyframes = this.getObjectByType('keyframe');
         for (var i in allKeyframes) {
@@ -2031,6 +1990,61 @@ $derby = new _DerbySimulator();;(function () {
                 _DerbySimulator.prototype.addClass(elt, 'production');
             }
         }
+    };
+
+    /**
+     * Set the element to move
+     * @param {Object} obj This object must have the method setPosition(pos, inc)
+     */
+    Scene.prototype.registerMovingElement = function (obj) {
+        var elt = obj.getElement();
+        var _self = this;
+        elt.addEventListener('mousedown', function (event) {
+            if ((obj.lock) || (!_self.interactive)) {
+                return;
+            }
+            _self.interaction.movingElement = {
+                obj: obj,
+                clientX: event.clientX,
+                clientY: event.clientY
+            }
+        });
+
+        if (this.interaction.allElements.indexOf(obj) < 0) {
+            this.interaction.allElements.push(obj);
+        }
+    };
+    
+    Scene.prototype.setInteractive = function(state) {
+        this.interactive = state;
+    };
+
+    /**
+     * Launch the interaction mode (moving elements)
+     */
+    Scene.prototype.launchInteraction = function () {
+        var _self = this;
+
+        this.interaction = {
+            movingElement: null,
+            allElements: []
+        }
+
+        this.element.addEventListener('mousemove', function (event) {
+            if (_self.interaction.movingElement) {
+                var increment = new _DerbySimulator.prototype.Vector({
+                    x: (event.clientX - _self.interaction.movingElement.clientX) / _self.opt.scale,
+                    y: (event.clientY - _self.interaction.movingElement.clientY) / _self.opt.scale
+                });
+                _self.interaction.movingElement.obj.setPosition(null, increment);
+                _self.interaction.movingElement.clientX = event.clientX;
+                _self.interaction.movingElement.clientY = event.clientY;
+            }
+        });
+
+        this.element.addEventListener('mouseup', function (event) {
+            _self.interaction.movingElement = null;
+        });
     };
 
     /**
@@ -2048,13 +2062,13 @@ $derby = new _DerbySimulator();;(function () {
     Scene.prototype.registerObject = function (obj) {
         this.allObjects[obj.id] = obj;
     };
-    
+
     /**
      * Get objects by type
      * @param   {String} typeName type to filer
      * @returns {Array} list of filtered objects
      */
-    Scene.prototype.getObjectByType = function(typeName) {
+    Scene.prototype.getObjectByType = function (typeName) {
         var result = [];
         for (var i in this.allObjects) {
             if (this.allObjects[i].objectName === typeName) {
@@ -2063,7 +2077,7 @@ $derby = new _DerbySimulator();;(function () {
         }
         return result;
     };
-    
+
     /**
      * unregister an object
      * @param {object} obj object to register
