@@ -32,49 +32,6 @@
                 myScene = new $derby.Scene({scale:0.3});
                 $('body').get(0).appendChild(myScene.getElement());
                 
-                //console.log($('body').get(0).innerHTML);
-                
-                /*var bezier = new $derby.Bezier([
-                    new $derby.Vector({x:1700, y:-200}),
-                    new $derby.Vector({x:1400, y:-600}),
-                    new $derby.Vector({x:1000, y:-800}),
-                    new $derby.Vector({x:500, y:-400}),
-                    new $derby.Vector({x:0, y:-800}),
-                    new $derby.Vector({x:-800, y:-400}),
-                    new $derby.Vector({x:-1100, y:0})
-                ]);
-
-                myScene.allHumans[0].addTrajectory(bezier.generatePoints(50));
-                myScene.globalAnimate(5000);*/
-                
-                var allPlayers = $('g.player');
-                allPlayers.each(function(index, element) {
-                    $(element).bind('mousedown', function(event) {
-                        var id = $(element).attr('id')
-                        movingPlayer = {
-                            player: myScene.findObject(id),
-                            clientX: event.clientX,
-                            clientY: event.clientY
-                        };
-                    });
-                });
-                
-                $(document).bind('mousemove', function(event){
-                    if(movingPlayer === null) return;
-                    movingPlayer.player.setPosition(null, new $derby.Vector({
-                        x:(event.clientX - movingPlayer.clientX) / myScene.opt.scale,
-                        y:(event.clientY - movingPlayer.clientY) / myScene.opt.scale
-                    }));
-                    movingPlayer.clientX = event.clientX;
-                    movingPlayer.clientY = event.clientY;
-
-                });
-                
-                $(document).bind('mouseup', function(){
-                    movingPlayer = null;
-                });
-                
-                
             });
             
             
