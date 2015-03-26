@@ -473,6 +473,9 @@ $derby = new _DerbySimulator();;(function () {
      */
     Animation.prototype.generatePoints = function (milliseconds) {
         var result = [];
+        if (this.keyFrames.length === 0) {
+            return result;
+        }
         //this.sortKeyframes();
         for (var i = 0; i < this.keyFrames[0].milliseconds; i += milliseconds) {
             result.push(null);
@@ -1298,7 +1301,7 @@ $derby = new _DerbySimulator();;(function () {
         // Animations
         this.animations = [];
         this.animationControl = {
-            timeStep: 50
+            timeStep: this.scene.timeStep
         };
 
         this.name = this.opt.name;
@@ -1927,7 +1930,8 @@ $derby = new _DerbySimulator();;(function () {
                 },
                 scale: 1,
                 edit: false,
-                interactive: true
+                interactive: true,
+                timeStep: 100
             },
             options
         );
@@ -1935,6 +1939,7 @@ $derby = new _DerbySimulator();;(function () {
         this.editMode = this.opt.edit;
         this.interactive = this.opt.interactive;
         this.scale = this.opt.scale;
+        this.timeStep = this.opt.timeStep;
 
         // scale the global bounds
         this.opt.size.width *= this.scale;
