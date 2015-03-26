@@ -76,12 +76,6 @@ $derby = new _DerbySimulator();;(function () {
                                 }
                             }
                         },
-                        toggleKeyframeShadow: function (state) {
-                            var keyframes = rollerDerbyModel.Keyframe.prototype.all;
-                            for (var i in keyframes) {
-                                keyframes[i].shadowElement(state);
-                            }
-                        },
                         showKeyFrames: function (animation) {
                             if (!animation) return;
                             var keyframes = animation.keyFrames;
@@ -91,6 +85,26 @@ $derby = new _DerbySimulator();;(function () {
                                 });
                             }
 
+                        },
+                        lockAllKeyframes: function () {
+                            var keyframes = rollerDerbyModel.Keyframe.prototype.all;
+                            for (var i in keyframes) {
+                                keyframes[i].setLock(true);
+                            }
+                        },
+                        unlockKeyFrames: function (animation) {
+                            if (!animation) return;
+                            var keyframes = animation.keyFrames;
+                            for (var i in keyframes) {
+                                keyframes[i].setLock(false);
+                            }
+
+                        },
+                        toggleKeyframeShadow: function (state) {
+                            var keyframes = rollerDerbyModel.Keyframe.prototype.all;
+                            for (var i in keyframes) {
+                                keyframes[i].shadowElement(state);
+                            }
                         },
                         launchAnimation: function (player, index) {
                             if (scope.edit) {
@@ -132,6 +146,9 @@ $derby = new _DerbySimulator();;(function () {
                             });
 
                             angular.element(keyFrame.getElement()).bind('mousedown', function (event) {
+                                if (keyFrame.lock) {
+                                    return;
+                                }
                                 movingElement = {
                                     element: keyFrame,
                                     clientX: event.clientX,
@@ -152,9 +169,9 @@ $derby = new _DerbySimulator();;(function () {
      * Bench object
      * @param {array[Point]} points  List of points
      */
-    var AnimationBezier = function (scene, options) {
+    var AnimationBezier = function (scene) {
         this.modelClass = _DerbySimulator.prototype.Animation.prototype;
-        _DerbySimulator.prototype.Animation.call(this, scene, options);
+        _DerbySimulator.prototype.Animation.call(this, scene);
         
         // generate id
         //this.id = _DerbySimulator.prototype.getUUID();
@@ -338,9 +355,9 @@ $derby = new _DerbySimulator();;(function () {
     /**
      * Animation object
      */
-    var AnimationLinear = function () {
+    var AnimationLinear = function (scene) {
         this.modelClass = _DerbySimulator.prototype.Animation.prototype;
-        _DerbySimulator.prototype.Animation.call(this, scene, options);
+        _DerbySimulator.prototype.Animation.call(this, scene);
         // generate id
         //this.id = _DerbySimulator.prototype.getUUID();
         this.keyFrames = [];
@@ -446,12 +463,6 @@ $derby = new _DerbySimulator();;(function () {
         // get the scene
         this.scene = scene;
         scene.registerObject(this);
-
-        // default options
-        this.opt = _DerbySimulator.prototype.extend({
-            },
-            options
-        );
 
         // generate id
         this.id = _DerbySimulator.prototype.getUUID();
@@ -745,7 +756,8 @@ $derby = new _DerbySimulator();;(function () {
             options
         );
 
-        
+        // make the keyframe insensitive to the click
+        this.lock = false;
 
         this.position = new _DerbySimulator.prototype.Vector(this.opt.position);
         this.milliseconds = this.opt.milliseconds;
@@ -771,7 +783,24 @@ $derby = new _DerbySimulator();;(function () {
         if (!this.scene.editMode) {
             _DerbySimulator.prototype.addClass(elt, 'production');
         }
+        if (this.lock) {
+            _DerbySimulator.prototype.addClass(elt, 'lock');
+        }
         return elt;
+    };
+    
+    /**
+     * Change lock state to make the keyframe insensitive to the click
+     * @param {[[Type]]} state [[Description]]
+     */
+    Keyframe.prototype.setLock = function(state) {
+        var elt = this.getElement();
+        this.lock = state;
+        if (this.lock) {
+            _DerbySimulator.prototype.addClass(elt, 'lock');
+        } else {
+            _DerbySimulator.prototype.removeClass(elt, 'lock');
+        }
     };
     
     /**
@@ -1365,8 +1394,11 @@ $derby = new _DerbySimulator();;(function () {
                 if (distance < 0) {
                     // push the player
                     var incremental = (new _DerbySimulator.prototype.Vector(player.position)).sub(this.position).normalize().coef(Math.abs(distance) * 1.2);
-                    player.setPosition(null, incremental);
-
+                    if (!incremental.isZero())  {
+                        player.setPosition(null, incremental);
+                    } else {
+                        player.setPosition(incremental);
+                    }
                 }
             }
         }
@@ -1582,16 +1614,31 @@ $derby = new _DerbySimulator();;(function () {
         }, document.createTextNode('')));
         bulle.appendChild(frame);
         bulle.appendChild(this.txt);
+        
+        this.mark = this.createMarker(this.role);
 
+        elt.appendChild(this.border);
+        elt.appendChild(this.mark);
+        elt.appendChild(bulle);
+        return elt;
+    };
+    
+    /**
+     * Create the marker (pivot / jammer / blocker)
+     * @param   {String} role 'pivot' | 'jammer' | 'blocker'
+     * @returns {DomElement} marker
+     */
+    Player.prototype.createMarker = function(role) {
+        var elt;
         switch (this.role) {
         case 'jammer':
-            this.mark = new _DerbySimulator.prototype.SvgElement('polygon', {
+            elt = new _DerbySimulator.prototype.SvgElement('polygon', {
                 points: '0, 25 -5.878, 8.09 -23.776, 7.725 -9.511, -3.09 -14.695, -20.225 0, -10 14.695, -20.225 9.511, -3.09 23.776, 7.725 5.878, 8.09',
                 class: 'mark'
             });
             break;
         case 'pivot':
-            this.mark = new _DerbySimulator.prototype.SvgElement('rect', {
+            elt = new _DerbySimulator.prototype.SvgElement('rect', {
                 x: -18,
                 y: -8,
                 width: 36,
@@ -1603,7 +1650,7 @@ $derby = new _DerbySimulator();;(function () {
         case 'blocker':
             /* falls through */
         default:
-            this.mark = new _DerbySimulator.prototype.SvgElement('circle', {
+            elt = new _DerbySimulator.prototype.SvgElement('circle', {
                 cx: 0,
                 cy: 0,
                 r: 18,
@@ -1611,9 +1658,6 @@ $derby = new _DerbySimulator();;(function () {
                 class: 'mark'
             });
         }
-        elt.appendChild(this.border);
-        elt.appendChild(this.mark);
-        elt.appendChild(bulle);
         return elt;
     };
 
@@ -1859,21 +1903,43 @@ $derby = new _DerbySimulator();;(function () {
      * @param {Object} animationData Animations to load
      * @param {Object} options       Options to pass
      */
-    Player.prototype.loadAnimation = function (animationData, options) {
+    Player.prototype.loadAnimation = function (animationData) {
         var animation = null;
         this.cleanAnimations();
-        switch (animationData.type) {
-        case 'bezier':
-            animation = new _DerbySimulator.prototype.AnimationBezier(this.scene, options);
-            break;
-        default:
-            animation = new _DerbySimulator.prototype.AnimationLinear(this.scene, options);
-            break;
+        var animations = (Object.prototype.toString.call(animationData) === '[object Array]' ? animationData : [animationData]);
+        
+        for (var i in animations) {
+            switch (animations[i].type) {
+            case 'bezier':
+                animation = new _DerbySimulator.prototype.AnimationBezier(this.scene);
+                break;
+            default:
+                animation = new _DerbySimulator.prototype.AnimationLinear(this.scene);
+                break;
+            }
+            for (var j in animations[i].keyframes) {
+                animation.addKeyFrame(animations[i].keyframes[j]);
+            }
+            this.animations.push(animation);
         }
-        for (var i in animationData.keyframes) {
-            animation.addKeyFrame(animationData.keyframes[i]);
-        }
-        this.animations.push(animation);
+    };
+    
+    /**
+     * Load player parameters
+     * @param {Object} data player data
+     */
+    Player.prototype.loadParameters = function(data) {
+        this.setPosition(data.position);
+        this.name = data.name;
+        this.loadAnimation(data.animations);
+        var elt = this.getElement();
+        _DerbySimulator.prototype.removeClass(elt, this.role);
+        this.role = data.role;
+        _DerbySimulator.prototype.addClass(elt, this.role);
+        this.mark.parentElement.removeChild(this.mark);
+        this.mark = this.createMarker(this.role);
+        elt.appendChild(this.mark);
+        this.setTeam(this.team);
     };
 
     /**
@@ -2551,8 +2617,8 @@ $derby = new _DerbySimulator();;(function () {
             x: 0,
             y: 0
         }));
-        this.x /= distance;
-        this.y /= distance;
+        this.x /= (distance>0 ? distance : 1);
+        this.y /= (distance>0 ? distance : 1);
         return this;
     };
 
@@ -2577,6 +2643,14 @@ $derby = new _DerbySimulator();;(function () {
             y: this.y
         });
     };
+    
+    /**
+     * Check if the vector is null
+     * @returns {boolean} true if null
+     */
+    Vector.prototype.isZero = function() {
+        return ((this.x===0) && (this.y === 0));
+    }
 
     _DerbySimulator.prototype.Vector = Vector;
 })();

@@ -146,3 +146,11 @@ g.keyframe:hover text {
 g.production {
     display:none;
 }
+
+g.keyframe.lock rect{
+    stroke: #aaaaaa;
+}
+
+g.keyframe.lock line{
+    stroke: #aaaaaa;
+}

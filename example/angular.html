@@ -59,14 +59,10 @@
                 $scope.scene.api.launchAllAnimation();
             };
 
-            $scope.showKeyFrames = function () {
+            $scope.unlockKeyFrames = function () {
                 if ($scope.currentPlayer.value.animations.length) {
-                    $scope.scene.api.showKeyFrames($scope.currentPlayer.value.animations[0]);
+                    $scope.scene.api.unlockKeyFrames($scope.currentPlayer.value.animations[0]);
                 }
-            };
-
-            $scope.hideAllKeyframes = function () {
-                $scope.scene.api.hideAllKeyframes();
             };
 
             $scope.exportTeams = function () {
@@ -82,8 +78,8 @@
             };
 
             $scope.$watch('currentPlayer', function (newVal, oldVal) {
-                $scope.hideAllKeyframes();
-                $scope.showKeyFrames();
+                $scope.scene.api.lockAllKeyframes();
+                $scope.unlockKeyFrames();
 
             });
 
