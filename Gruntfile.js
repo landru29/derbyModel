@@ -96,6 +96,7 @@ module.exports = function (grunt) {
                 // the files to concatenate
                 src: [
                     'lib/derby-simulator.js',
+                    'lib/animation.js',
                     'lib/*.js',
                 ],
                 // the location of the resulting JS file

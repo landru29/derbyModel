@@ -1,6 +1,153 @@
 var _DerbySimulator = function () {};
 
-$derby = new _DerbySimulator();;(function () {
+$derby = new _DerbySimulator();
+
+(function () {
+
+    var myObject = function(parent, options, defaultOpts, register) {
+        this.id = _DerbySimulator.prototype.getUUID();
+        
+        // parent root
+        this.parent = parent;
+        if (('undefined' === typeof register) || (register===true)) {
+            this.allElements.push(this);
+        }
+        
+        this.opt = _DerbySimulator.prototype.extend(defaultOpts ? defaultOpts : {}, options ? options : {});
+        
+    };
+    
+    myObject.prototype = {
+        /**
+         * Get the SVG element
+         * @returns {DomElement} SVG element
+         */
+        getElement: function () {
+            return this.element;
+        },
+        allElements:[],
+        
+    };
+    
+    _DerbySimulator.prototype = {
+        object: myObject,
+        inherits: function(extendedPrototype, parentPrototype) {
+            var proto = Object.create('undefined' === typeof parentPrototype ? myObject.prototype : parentPrototype.prototype);
+            for (var i in extendedPrototype) {
+                proto[i] = extendedPrototype[i];
+            }
+            return proto;
+        }
+    };
+})();;(function () {
+    /**
+     * Chair object
+     * @param {Vector} position (x, y) object
+     */
+    var Animation = function (scene, options) {
+        _DerbySimulator.prototype.object.call(this, scene, options);
+        // get the scene
+        this.scene = scene;
+        scene.registerObject(this);
+
+        this.keyFrames = [];
+        this.objectName = 'animation';
+    };
+
+    Animation.prototype = _DerbySimulator.prototype.inherits({
+        /**
+         * Add a keyframe in the animation
+         * @param   {Vector}   position     (x,y) position
+         * @param   {Integer]} milliseconds Time from the origin
+         */
+        addKeyFrame: function (data) {
+            var keyFrame = new _DerbySimulator.prototype.Keyframe(this, data);
+            this.keyFrames.push(keyFrame);
+            //this.sort();
+            return keyFrame;
+        },
+
+        /**
+         * Remove a keyframe
+         * @param {Keyframe} kf keyframe to remove
+         */
+        removeKeyframe: function (kf) {
+            var index = this.keyFrames.indexOf(kf);
+            if (index > -1) {
+                this.keyFrames.splice(index, 1);
+                kf.destroy();
+            }
+        },
+
+        /**
+         * Clean the object
+         */
+        destroy: function () {
+            for (var i in this.keyFrames) {
+                this.keyFrames[i].destroy();
+            }
+            this.keyFrames = [];
+            this.scene.unregisterObject(this);
+        },
+
+        /**
+         * Get the duration of the animation in milliseconds
+         * @returns {Integer} duration in milliseconds
+         */
+        getDuration: function () {
+            var duration = 0;
+            for (var i in this.keyFrames) {
+                duration += this.keyFrames[i].milliseconds;
+            }
+            return duration;
+        },
+
+        /**
+         * Generate the list of points for the animation
+         * @param   {[[Type]]} milliseconds [[Description]]
+         * @returns {[[Type]]} [[Description]]
+         */
+        generatePoints: function (milliseconds) {
+            var result = [];
+            if (this.keyFrames.length === 0) {
+                return result;
+            }
+            //this.sortKeyframes();
+            for (var i = 0; i < this.keyFrames[0].milliseconds; i += milliseconds) {
+                result.push(null);
+            }
+            result.push(this.keyFrames[0].position);
+            for (var time = this.keyFrames[0].milliseconds; time <= this.getDuration(); time += milliseconds) {
+                result.push(this.interpolatePoint(time));
+            }
+            return result;
+        },
+
+        /**
+         * Interpolate points between two keyframes
+         * @param   {Integer} milliseconds Time from origin
+         * @returns {Vector} Interpolated point
+         */
+        interpolatePoint: function (milliseconds) {
+            throw '[Animation.interpolatePoint] This is a virtual class';
+        },
+
+        /**
+         * Get the JSON representation of the object
+         * @returns {String} JSON
+         */
+        stringify: function () {
+            var result = '{"type":"' + this.type + '","keyframes":[';
+            var kf = [];
+            for (var i in this.keyFrames) {
+                kf.push(this.keyFrames[i].stringify());
+            }
+            return result + kf.join(',') + ']}';
+        }
+    });
+
+    _DerbySimulator.prototype.Animation = Animation;
+})();;(function () {
     if ('undefined' !== typeof angular) {
         angular.module('roller-derby', []);
 
@@ -117,59 +264,14 @@ $derby = new _DerbySimulator();;(function () {
      * Bench object
      * @param {array[Point]} points  List of points
      */
-    var AnimationBezier = function (scene) {
+    var AnimationBezier = function (scene, options) {
         this.modelClass = _DerbySimulator.prototype.Animation.prototype;
-        _DerbySimulator.prototype.Animation.call(this, scene);
-
-        // generate id
-        //this.id = _DerbySimulator.prototype.getUUID();
-        this.keyFrames = [];
+        _DerbySimulator.prototype.Animation.call(this, scene, options);
 
         this.type = 'bezier';
-        this.objectName = 'animation';
     };
 
-    AnimationBezier.prototype = {
-        /**
-         * Add a keyframe in the animation
-         * @param   {Vector} position       (x,y) position
-         * @param   {Integer]} milliseconds Time from the origin
-         */
-        addKeyFrame: function (controlPoint, milliseconds) {
-            return this.modelClass.addKeyFrame.call(this, controlPoint, milliseconds);
-        },
-
-        /**
-         * Get the JSON representation of the object
-         * @returns {String} JSON
-         */
-        stringify: function () {
-            return this.modelClass.stringify.call(this);
-        },
-
-        /**
-         * Get the duration of the animation in milliseconds
-         * @returns {Integer} duration in milliseconds
-         */
-        getDuration: function () {
-            return this.modelClass.getDuration.call(this);
-        },
-
-        /**
-         * Remove a keyframe
-         * @param {Keyframe} kf keyframe to remove
-         */
-        removeKeyframe: function (kf) {
-            return this.modelClass.removeKeyframe.call(this, kf);
-        },
-
-        /**
-         * Clean the object
-         */
-        destroy: function () {
-            return this.modelClass.destroy.call(this);
-        },
-
+    AnimationBezier.prototype = _DerbySimulator.prototype.inherits({
         /**
          * Get a point on the spline
          * @param   {Object} indexing spline index
@@ -286,18 +388,8 @@ $derby = new _DerbySimulator();;(function () {
                 section: section,
                 t: (milliseconds - originTime) / (duration ? duration : 1)
             });
-        },
-
-
-        /**
-         * Generate the list of points for the animation
-         * @param   {[[Type]]} milliseconds [[Description]]
-         * @returns {[[Type]]} [[Description]]
-         */
-        generatePoints: function (milliseconds) {
-            return this.modelClass.generatePoints.call(this, milliseconds);
         }
-    };
+    }, _DerbySimulator.prototype.Animation);
 
 
     _DerbySimulator.prototype.AnimationBezier = AnimationBezier;
@@ -305,58 +397,14 @@ $derby = new _DerbySimulator();;(function () {
     /**
      * Animation object
      */
-    var AnimationLinear = function (scene) {
+    var AnimationLinear = function (scene, options) {
         this.modelClass = _DerbySimulator.prototype.Animation.prototype;
-        _DerbySimulator.prototype.Animation.call(this, scene);
-        // generate id
-        //this.id = _DerbySimulator.prototype.getUUID();
-        this.keyFrames = [];
+        _DerbySimulator.prototype.Animation.call(this, scene, options);
 
         this.type = 'linear';
-        this.objectName = 'animation';
     };
 
-    AnimationLinear.prototype = {
-        /**
-         * Add a keyframe in the animation
-         * @param   {Vector} position       (x,y) position
-         * @param   {Integer]} milliseconds Time from the origin
-         */
-        addKeyFrame: function (controlPoint, milliseconds) {
-            return this.modelClass.addKeyFrame.call(this, controlPoint, milliseconds);
-        },
-
-        /**
-         * Get the JSON representation of the object
-         * @returns {String} JSON
-         */
-        stringify: function () {
-            return this.modelClass.stringify.call(this);
-        },
-
-        /**
-         * Get the duration of the animation in milliseconds
-         * @returns {Integer} duration in milliseconds
-         */
-        getDuration: function () {
-            return this.modelClass.getDuration.call(this);
-        },
-
-        /**
-         * Remove a keyframe
-         * @param {Keyframe} kf keyframe to remove
-         */
-        removeKeyframe: function (kf) {
-            return this.modelClass.removeKeyframe.call(this, kf);
-        },
-
-        /**
-         * Clean the object
-         */
-        destroy: function () {
-            return this.modelClass.destroy.call(this);
-        },
-
+    AnimationLinear.prototype = _DerbySimulator.prototype.inherits({
         /**
          * Interpolate points between two keyframes
          * @param   {Integer} milliseconds Time from origin
@@ -392,130 +440,12 @@ $derby = new _DerbySimulator();;(function () {
                 x: (1 - fragment) * this.keyFrames[step - 1].position.x + fragment * this.keyFrames[step].position.x,
                 y: (1 - fragment) * this.keyFrames[step - 1].position.y + fragment * this.keyFrames[step].position.y
             });
-        },
-
-        /**
-         * Generate the list of points for the animation
-         * @param   {[[Type]]} milliseconds [[Description]]
-         * @returns {[[Type]]} [[Description]]
-         */
-        generatePoints: function (milliseconds) {
-            return this.modelClass.generatePoints.call(this, milliseconds);
         }
-    };
+        
+    }, _DerbySimulator.prototype.Animation);
 
 
     _DerbySimulator.prototype.AnimationLinear = AnimationLinear;
-})();;(function () {
-    /**
-     * Chair object
-     * @param {Vector} position (x, y) object
-     */
-    var Animation = function (scene, options) {
-        // get the scene
-        this.scene = scene;
-        scene.registerObject(this);
-
-        // generate id
-        this.id = _DerbySimulator.prototype.getUUID();
-
-        this.keyFrames = [];
-        this.objectName = 'animation';
-    };
-
-    Animation.prototype = {
-        /**
-         * Add a keyframe in the animation
-         * @param   {Vector}   position     (x,y) position
-         * @param   {Integer]} milliseconds Time from the origin
-         */
-        addKeyFrame: function (data) {
-            var keyFrame = new _DerbySimulator.prototype.Keyframe(this, data);
-            this.keyFrames.push(keyFrame);
-            //this.sort();
-            return keyFrame;
-        },
-
-        /**
-         * Remove a keyframe
-         * @param {Keyframe} kf keyframe to remove
-         */
-        removeKeyframe: function (kf) {
-            var index = this.keyFrames.indexOf(kf);
-            if (index > -1) {
-                this.keyFrames.splice(index, 1);
-                kf.destroy();
-            }
-        },
-
-        /**
-         * Clean the object
-         */
-        destroy: function () {
-            for (var i in this.keyFrames) {
-                this.keyFrames[i].destroy();
-            }
-            this.keyFrames = [];
-            this.scene.unregisterObject(this);
-        },
-
-        /**
-         * Get the duration of the animation in milliseconds
-         * @returns {Integer} duration in milliseconds
-         */
-        getDuration: function () {
-            var duration = 0;
-            for (var i in this.keyFrames) {
-                duration += this.keyFrames[i].milliseconds;
-            }
-            return duration;
-        },
-
-        /**
-         * Generate the list of points for the animation
-         * @param   {[[Type]]} milliseconds [[Description]]
-         * @returns {[[Type]]} [[Description]]
-         */
-        generatePoints: function (milliseconds) {
-            var result = [];
-            if (this.keyFrames.length === 0) {
-                return result;
-            }
-            //this.sortKeyframes();
-            for (var i = 0; i < this.keyFrames[0].milliseconds; i += milliseconds) {
-                result.push(null);
-            }
-            result.push(this.keyFrames[0].position);
-            for (var time = this.keyFrames[0].milliseconds; time <= this.getDuration(); time += milliseconds) {
-                result.push(this.interpolatePoint(time));
-            }
-            return result;
-        },
-
-        /**
-         * Interpolate points between two keyframes
-         * @param   {Integer} milliseconds Time from origin
-         * @returns {Vector} Interpolated point
-         */
-        interpolatePoint: function (milliseconds) {
-            throw '[Animation.interpolatePoint] This is a virtual class';
-        },
-
-        /**
-         * Get the JSON representation of the object
-         * @returns {String} JSON
-         */
-        stringify: function () {
-            var result = '{"type":"' + this.type + '","keyframes":[';
-            var kf = [];
-            for (var i in this.keyFrames) {
-                kf.push(this.keyFrames[i].stringify());
-            }
-            return result + kf.join(',') + ']}';
-        }
-    };
-
-    _DerbySimulator.prototype.Animation = Animation;
 })();;(function () {
     /**
      * Bench object
@@ -523,24 +453,19 @@ $derby = new _DerbySimulator();;(function () {
      * @param {object} options options to be passed
      */
     var Bench = function (scene, options) {
-        // generate id
-        this.id = _DerbySimulator.prototype.getUUID();
-        this.objectName = 'bench';
-
-        // parent root
-        this.scene = scene;
-        scene.registerObject(this);
-
-        // default options
-        this.opt = _DerbySimulator.prototype.extend({
+        _DerbySimulator.prototype.object.call(this, scene, options, {
                 position: 0,
                 offset: {
                     x: 0,
                     y: 0
                 }
-            },
-            options
-        );
+            });
+
+        this.objectName = 'bench';
+
+        // parent root
+        this.scene = scene;
+        scene.registerObject(this);
 
         // Create the chairs
         if (parseInt('' + this.opt.position, 10) === 0) {
@@ -596,14 +521,7 @@ $derby = new _DerbySimulator();;(function () {
         scene.addElement(this.element);
     };
 
-    Bench.prototype = {
-        /**
-         * Get the SVG element
-         * @returns {DomElement} SVG element
-         */
-        getElement: function () {
-            return this.element;
-        },
+    Bench.prototype = _DerbySimulator.prototype.inherits({
 
         /**
          * Build the graphical element
@@ -645,7 +563,7 @@ $derby = new _DerbySimulator();;(function () {
 
             return element;
         }
-    };
+    });
 
     _DerbySimulator.prototype.Bench = Bench;
 })();;(function () {
@@ -654,15 +572,15 @@ $derby = new _DerbySimulator();;(function () {
      * @param {Vector} position (x, y) object
      */
     var Chair = function (position) {
-        // generate id
-        this.id = _DerbySimulator.prototype.getUUID();
+        _DerbySimulator.prototype.object.call(this, null, null, null, false);
+
         this.objectName = 'chair';
 
         this.position = position;
         this.player = null;
     };
 
-    Chair.prototype = {
+    Chair.prototype = _DerbySimulator.prototype.inherits({
         /**
          * Check if the chair is free
          * @returns {boolean} TRUE if free
@@ -687,7 +605,7 @@ $derby = new _DerbySimulator();;(function () {
         getPlayer: function () {
             return this.player;
         }
-    };
+    });
 
     _DerbySimulator.prototype.Chair = Chair;
 })();;(function () {
@@ -697,25 +615,20 @@ $derby = new _DerbySimulator();;(function () {
      * @param {Integer} milliseconds Time
      */
     var Keyframe = function (animation, options) {
-        // generate id
-        this.id = _DerbySimulator.prototype.getUUID();
+        _DerbySimulator.prototype.object.call(this, animation, options, {
+                position: {
+                    x: 0,
+                    y: 0
+                },
+                milliseconds: (animation.keyFrames.length === 0 ? 0 : 1000)
+            });
+
         this.objectName = 'keyframe';
 
         // parent root
         this.animation = animation;
         this.scene = animation.scene;
         this.scene.registerObject(this);
-
-        // default options
-        this.opt = _DerbySimulator.prototype.extend({
-                position: {
-                    x: 0,
-                    y: 0
-                },
-                milliseconds: (this.animation.keyFrames.length === 0 ? 0 : 1000)
-            },
-            options
-        );
 
         // make the keyframe insensitive to the click
         this.lock = false;
@@ -738,7 +651,7 @@ $derby = new _DerbySimulator();;(function () {
 
     };
 
-    Keyframe.prototype = {
+    Keyframe.prototype = _DerbySimulator.prototype.inherits({
         /**
          * Build the graphical element
          * @returns {DomElement} SVG element
@@ -792,14 +705,6 @@ $derby = new _DerbySimulator();;(function () {
         },
 
         /**
-         * Get the SVG element
-         * @returns {DomElement} SVG element
-         */
-        getElement: function () {
-            return this.element;
-        },
-
-        /**
          * Define the new positionof the keyframe (in cm)
          * @param {Vector}  point (x, y) new position in cm
          * @param {Vector}  inc (x, y) new incremental position in cm (facultative)
@@ -823,7 +728,7 @@ $derby = new _DerbySimulator();;(function () {
         stringify: function () {
             return '{"milliseconds":' + this.milliseconds + ',"position":' + this.position.stringify() + '}';
         }
-    };
+    });
 
     _DerbySimulator.prototype.Keyframe = Keyframe;
 })();;(function () {
@@ -833,18 +738,13 @@ $derby = new _DerbySimulator();;(function () {
      * @param {object} options options to be passed
      */
     var Pack = function (scene, options) {
-        // generate id
-        this.id = _DerbySimulator.prototype.getUUID();
+        _DerbySimulator.prototype.object.call(this, scene, options);
+
         this.objectName = 'pack';
 
         // parent root
         this.scene = scene;
         scene.registerObject(this);
-
-        // default options
-        this.opt = _DerbySimulator.prototype.extend({},
-            options
-        );
 
         this.players = null;
         this.forward = null;
@@ -855,14 +755,7 @@ $derby = new _DerbySimulator();;(function () {
         scene.addElement(this.element);
     };
 
-    Pack.prototype = {
-        /**
-         * Get the SVG element
-         * @returns {DomElement} SVG element
-         */
-        getElement: function () {
-            return this.element;
-        },
+    Pack.prototype = _DerbySimulator.prototype.inherits({
 
         /**
          * Build the graphical element
@@ -1163,7 +1056,7 @@ $derby = new _DerbySimulator();;(function () {
             }
             this.draw();
         }
-    };
+    });
 
     _DerbySimulator.prototype.Pack = Pack;
 })();;(function () {
@@ -1173,23 +1066,20 @@ $derby = new _DerbySimulator();;(function () {
      * @param {object} options options to be passed
      */
     var PenaltyBox = function (scene, options) {
+        _DerbySimulator.prototype.object.call(this, scene, options, {
+                offset: {
+                    x: 0,
+                    y: 0
+                }
+            });
         // generate id
-        this.id = _DerbySimulator.prototype.getUUID();
+        //this.id = _DerbySimulator.prototype.getUUID();
         this.objectName = 'penalty-box';
 
         // parent root
         this.scene = scene;
         scene.registerObject(this);
 
-        // default options
-        this.opt = _DerbySimulator.prototype.extend({
-                offset: {
-                    x: 0,
-                    y: 0
-                }
-            },
-            options
-        );
 
         // Create the chairs
         this.chairs = [
@@ -1236,15 +1126,7 @@ $derby = new _DerbySimulator();;(function () {
         scene.addElement(this.element);
     };
 
-    PenaltyBox.prototype = {
-
-        /**
-         * Get the SVG element
-         * @returns {DomElement} SVG element
-         */
-        getElement: function () {
-            return this.element;
-        },
+    PenaltyBox.prototype = _DerbySimulator.prototype.inherits({
 
         /**
          * Build the graphical element
@@ -1277,7 +1159,7 @@ $derby = new _DerbySimulator();;(function () {
 
             return element;
         }
-    };
+    });
 
     _DerbySimulator.prototype.PenaltyBox = PenaltyBox;
 })();;(function () {
@@ -1287,23 +1169,7 @@ $derby = new _DerbySimulator();;(function () {
      * @param {object} options options to be passed
      */
     var Player = function (scene, options) {
-        // generate id
-        this.id = _DerbySimulator.prototype.getUUID();
-        this.objectName = 'player';
-
-        if ('undefined' === typeof Player.prototype.all) {
-            Player.prototype.all = [];
-        }
-        Player.prototype.all.push(this);
-
-        this.humanType = 'player';
-
-        // parent root
-        this.scene = scene;
-        scene.registerObject(this);
-
-        // default options
-        this.opt = _DerbySimulator.prototype.extend({
+        _DerbySimulator.prototype.object.call(this, scene, options, {
                 ray: 30,
                 role: 'blocker',
                 position: {
@@ -1311,9 +1177,17 @@ $derby = new _DerbySimulator();;(function () {
                     y: 0
                 },
                 name: Player.prototype.all.length
-            },
-            options
-        );
+            });
+        
+        this.objectName = 'player';
+
+        Player.prototype.all.push(this);
+
+        this.humanType = 'player';
+
+        // parent root
+        this.scene = scene;
+        scene.registerObject(this);
 
         // Animations
         this.animations = [];
@@ -1355,7 +1229,8 @@ $derby = new _DerbySimulator();;(function () {
 
     };
 
-    Player.prototype = {
+    Player.prototype = _DerbySimulator.prototype.inherits({
+        all:[],
         /**
          * Check the collision and make the other players move
          */
@@ -1383,9 +1258,9 @@ $derby = new _DerbySimulator();;(function () {
          * Get the SVG element
          * @returns {DomElement} SVG element
          */
-        getElement: function () {
+        /*getElement: function () {
             return this.element;
-        },
+        },*/
 
         /**
          * Define the new positionof the player (in cm)
@@ -1926,7 +1801,7 @@ $derby = new _DerbySimulator();;(function () {
             }
             this.animations = [];
         }
-    };
+    });
 
     _DerbySimulator.prototype.Player = Player;
 })();;(function () {
@@ -1934,15 +1809,8 @@ $derby = new _DerbySimulator();;(function () {
      * Scene object
      * @param {object} options Options to be passed
      */
-    var Scene = function (options) {
-        // register all scene objects
-        this.allObjects = {};
-
-        // generate id
-        this.id = _DerbySimulator.prototype.getUUID();
-        this.objectName = 'scene';
-
-        this.opt = _DerbySimulator.prototype.extend({
+    var Scene = function (options) {  
+        _DerbySimulator.prototype.object.call(this, this, options, {
                 size: {
                     width: 3250,
                     height: 2000
@@ -1951,9 +1819,11 @@ $derby = new _DerbySimulator();;(function () {
                 edit: false,
                 interactive: true,
                 timeStep: 100
-            },
-            options
-        );
+            });
+        // register all scene objects
+        this.allObjects = {};
+
+        this.objectName = 'scene';
 
         this.editMode = this.opt.edit;
         this.interactive = this.opt.interactive;
@@ -2004,7 +1874,7 @@ $derby = new _DerbySimulator();;(function () {
 
     };
 
-    Scene.prototype = {
+    Scene.prototype = _DerbySimulator.prototype.inherits({
         setEditMode: function (state) {
             this.editMode = state;
             var allKeyframes = this.getObjectByType('keyframe');
@@ -2142,14 +2012,6 @@ $derby = new _DerbySimulator();;(function () {
         },
 
         /**
-         * Get the SVG element
-         * @returns {DomElement} SVG element
-         */
-        getElement: function () {
-            return this.element;
-        },
-
-        /**
          * Build the graphical element
          * @returns {DomElement} SVG element
          */
@@ -2261,7 +2123,7 @@ $derby = new _DerbySimulator();;(function () {
                 });
             }
         }
-    };
+    });
 
 
     _DerbySimulator.prototype.Scene = Scene;
@@ -2275,8 +2137,8 @@ $derby = new _DerbySimulator();;(function () {
      * @param {Bench}    bench    team bench
      */
     var Team = function (scene, name, color, position, bench) {
+        _DerbySimulator.prototype.object.call(this, scene);
         // generate id
-        this.id = _DerbySimulator.prototype.getUUID();
         this.objectName = 'team';
 
         // parent root
@@ -2315,7 +2177,7 @@ $derby = new _DerbySimulator();;(function () {
         }));
     };
 
-    Team.prototype = {
+    Team.prototype = _DerbySimulator.prototype.inherits({
         /**
          * Add a player in the team
          * @param {Player} player player to add
@@ -2338,7 +2200,7 @@ $derby = new _DerbySimulator();;(function () {
             }
             return '{"position":' + this.position + ',"color":"' + this.color + '","players":[' + thePlayers.join(',') + ']}';
         }
-    };
+    });
 
     _DerbySimulator.prototype.Team = Team;
 })();;(function () {
@@ -2509,32 +2371,20 @@ $derby = new _DerbySimulator();;(function () {
      * @param {object} options options to be passed
      */
     var Track = function (scene, options) {
-        // generate id
-        this.id = _DerbySimulator.prototype.getUUID();
+        _DerbySimulator.prototype.object.call(this, scene, options);
+
         this.objectName = 'track';
 
         // parent root
         this.scene = scene;
         scene.registerObject(this);
 
-        // default options
-        this.opt = _DerbySimulator.prototype.extend({},
-            options
-        );
-
         // Build graphical element
         this.element = this.buildElement();
         scene.addElement(this.element);
     };
 
-    Track.prototype = {
-        /**
-         * Get the SVG element
-         * @returns {DomElement} SVG element
-         */
-        getElement: function () {
-            return this.element;
-        },
+    Track.prototype = _DerbySimulator.prototype.inherits({
 
         /**
          * Build the graphical element
@@ -2620,7 +2470,7 @@ $derby = new _DerbySimulator();;(function () {
 
             return trackElement;
         }
-    };
+    });
 
 
     _DerbySimulator.prototype.Track = Track;
@@ -2630,8 +2480,8 @@ $derby = new _DerbySimulator();;(function () {
      * @param {Object} data (x,y) object
      */
     var Vector = function (data) {
-        // generate id
-        this.id = _DerbySimulator.prototype.getUUID();
+        _DerbySimulator.prototype.object.call(this, null, null, null, false);
+
         this.objectName = 'track';
 
         this.x = (data.x ? data.x : 0);
@@ -2642,7 +2492,7 @@ $derby = new _DerbySimulator();;(function () {
         }
     };
 
-    Vector.prototype = {
+    Vector.prototype = _DerbySimulator.prototype.inherits({
         /**
          * Compute distance between 2 points
          * @param   {Vector}   point Second point
@@ -2717,7 +2567,7 @@ $derby = new _DerbySimulator();;(function () {
         isZero: function () {
             return ((this.x === 0) && (this.y === 0));
         }
-    };
+    });
 
     _DerbySimulator.prototype.Vector = Vector;
 })();
