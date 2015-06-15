@@ -1,6 +1,7 @@
-var _DerbySimulator = function () {};
+window._DerbySimulator = function () {};
+_DerbySimulator.prototype = {};
 
-$derby = new _DerbySimulator();
+window.$derby = new _DerbySimulator();
 
 (function () {
 
@@ -29,16 +30,15 @@ $derby = new _DerbySimulator();
         
     };
     
-    _DerbySimulator.prototype = {
-        object: myObject,
-        inherits: function(extendedPrototype, parentPrototype) {
+    
+    _DerbySimulator.prototype.object= myObject;
+    _DerbySimulator.prototype.inherits = function(extendedPrototype, parentPrototype) {
             var proto = Object.create('undefined' === typeof parentPrototype ? myObject.prototype : parentPrototype.prototype);
             for (var i in extendedPrototype) {
                 proto[i] = extendedPrototype[i];
             }
             return proto;
-        }
-    };
+        };
 })();;(function () {
     /**
      * Chair object
@@ -1285,7 +1285,7 @@ $derby = new _DerbySimulator();
             }
             var outTrackPlayers = this.scene.getOutTrackPlayers();
             for (var j in outTrackPlayers) {
-                outTrackPlayers[j].setText(['Out of', 'bounce']);
+                outTrackPlayers[j].setText(['Out of', 'bounds']);
             }
         },
 
@@ -1597,12 +1597,12 @@ $derby = new _DerbySimulator();
                 if (this.role !== 'jammer') {
                     this.setText(['Out of play']);
                 } else {
-                    this.setText(['In bounce']);
+                    this.setText(['In bounds']);
                 }
                 _DerbySimulator.prototype.removeClass(this.getElement(), 'out-of-play');
                 // Is there a pack ?
                 if (this.scene.pack.players === null) {
-                    this.setText(['In bounce']);
+                    this.setText(['In bounds']);
                     return false;
                 }
                 // player in the pack ?
@@ -1629,7 +1629,7 @@ $derby = new _DerbySimulator();
                     }
                 }
             } else {
-                this.setText(['Out of', 'bounce']);
+                this.setText(['Out of', 'bounds']);
             }
             if (this.role !== 'jammer') {
                 _DerbySimulator.prototype.addClass(this.getElement(), 'out-of-play');
@@ -2482,7 +2482,7 @@ $derby = new _DerbySimulator();
     var Vector = function (data) {
         _DerbySimulator.prototype.object.call(this, null, null, null, false);
 
-        this.objectName = 'track';
+        this.objectName = 'vector';
 
         this.x = (data.x ? data.x : 0);
         this.y = (data.y ? data.y : 0);
