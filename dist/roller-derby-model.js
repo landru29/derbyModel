@@ -364,7 +364,7 @@ window.$derby = new _DerbySimulator();
 
             var originTime = (function (keyframes, sect) {
                 if (sect === 0) {
-                    return keyframes[0].milliseconds
+                    return keyframes[0].milliseconds;
                 }
                 var origin = 0;
                 for (var i = 0; i < sect; i++) {
@@ -1741,7 +1741,7 @@ window.$derby = new _DerbySimulator();
          */
         stringify: function () {
             var anim = [];
-            for (i in this.animations) {
+            for (var i in this.animations) {
                 anim.push(this.animations[i].stringify());
             }
             var animJson = '[' + anim.join(',') + ']';
@@ -1917,7 +1917,7 @@ window.$derby = new _DerbySimulator();
                     obj: obj,
                     clientX: event.clientX,
                     clientY: event.clientY
-                }
+                };
             });
 
             if (this.interaction.allElements.indexOf(obj) < 0) {
@@ -1942,7 +1942,7 @@ window.$derby = new _DerbySimulator();
             this.interaction = {
                 movingElement: null,
                 allElements: []
-            }
+            };
 
             this.element.addEventListener('mousemove', function (event) {
                 if (_self.interaction.movingElement) {
@@ -2103,24 +2103,27 @@ window.$derby = new _DerbySimulator();
          * @param {integer} milliseconds Global duration
          */
         launchAnimation: function (index, callback) {
+            
+            var animate = function () {
+                if (!_self.animationControl.done) {
+                    for (var j in _self.allHumans) {
+                        if (_self.allHumans[j].animationControl.currentKeyFrame < _self.allHumans[j].animationControl.maxKeyFrame) {
+                            return;
+                        }
+                    }
+                    if (callback) {
+                        _self.animationControl.done = true;
+                        callback();
+                    }
+                }
+            };
+            
             this.animationControl.done = false;
             //console.log('Starting animation ' + this.animationControl.id);
             var _self = this;
             for (var i in this.allHumans) {
                 this.allHumans[i].selectAnimation(index);
-                this.allHumans[i].lauchAnimation(function () {
-                    if (!_self.animationControl.done) {
-                        for (var j in _self.allHumans) {
-                            if (_self.allHumans[j].animationControl.currentKeyFrame < _self.allHumans[j].animationControl.maxKeyFrame) {
-                                return;
-                            }
-                        }
-                        if (callback) {
-                            _self.animationControl.done = true;
-                            callback();
-                        }
-                    }
-                });
+                this.allHumans[i].lauchAnimation(animate);
             }
         }
     });

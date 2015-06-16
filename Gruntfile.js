@@ -13,6 +13,8 @@ module.exports = function (grunt) {
         pkg: grunt.file.readJSON('package.json'),
         project: {
             build: './build',
+            dist: './dist',
+            wplugin: 'track-simulator',
             app: './app'
         },
 
@@ -69,24 +71,80 @@ module.exports = function (grunt) {
             }
         },
 
+        copy: {
+            wordpress: {
+                files: [
+                    {
+                        expand: true,
+                        flatten: false,
+                        src: ['wordpress/<%= project.wplugin %>/**'],
+                        dest: '<%= project.dist%>'
+                    }
+                ]
+            },
+            wp_js: {
+                files: [
+                    {
+                        expand: true,
+                        flatten: true,
+                        cwd: '<%= project.dist%>',
+                        src: ['*.min.js'],
+                        dest: '<%= project.dist%>/wordpress/<%= project.wplugin %>/js'
+                    }
+                ]
+            },
+            wp_css: {
+                files: [
+                    {
+                        expand: true,
+                        flatten: true,
+                        cwd: '<%= project.dist%>',
+                        src: ['*.min.css'],
+                        dest: '<%= project.dist%>/wordpress/<%= project.wplugin %>/css'
+                    }
+                ]
+            }
+        },
+
+        clean: { // erase all files in dist and build folder
+            dist: ['<%= project.dist%>', '<%= project.build%>'],
+            wordpress: ['<%= project.dist%>/wordpress',]
+        },
+
+        compress: {
+            wordpress: {
+                options: {
+                    archive: '<%= project.dist%>/<%= project.wplugin %>.zip'
+                },
+                files: [
+                    {
+                        expand: true,
+                        cwd: '<%= project.dist%>/wordpress/',
+                        src: ['**'],
+                        dest: ''
+                    }
+                ]
+            }
+        },
+
         jshint: {
             dev: [
-                '<%= project.app%>/scripts/**/*.js',
+                'lib/**/*.js',
                 'Gruntfile.js'
             ]
         },
-        
+
         cssmin: {
             dist: {
                 files: [
                     {
-                        dest: '<%= pkg.name%>.min.css',
+                        dest: '<%= project.dist %>/<%= pkg.name%>.min.css',
                         src: ['css/*.css']
                     }
                 ]
             }
         },
-        
+
         concat: { // concatenate JS files in one
             options: {
                 // define a string to put between each file in the concatenated output
@@ -100,18 +158,18 @@ module.exports = function (grunt) {
                     'lib/*.js',
                 ],
                 // the location of the resulting JS file
-                dest: '<%= pkg.name %>.js'
+                dest: '<%= project.dist %>/<%= pkg.name %>.js'
             }
         },
-        
+
         uglify: {
             options: {
                 banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
-        '<%= grunt.template.today("yyyy-mm-dd") %> Cyrille MEICHEL <cmeichel@free.fr> */'
+                    '<%= grunt.template.today("yyyy-mm-dd") %> Cyrille MEICHEL <cmeichel@free.fr> */'
             },
             dist: {
                 files: {
-                    '<%= pkg.name%>.min.js': ['<%= pkg.name %>.js']
+                    '<%= project.dist %>/<%= pkg.name%>.min.js': ['<%= project.dist %>/<%= pkg.name %>.js']
                 }
             }
         }
@@ -125,10 +183,16 @@ module.exports = function (grunt) {
     ]);
 
     grunt.registerTask('build', [
+        'clean:dist',
         'jshint:dev',
         'cssmin:dist',
         'concat:dist',
-        'uglify:dist'
+        'uglify:dist',
+        'copy:wordpress',
+        'copy:wp_js',
+        'copy:wp_css',
+        'compress:wordpress',
+        'clean:wordpress'
     ]);
 
     grunt.registerTask('default', ['build']);
